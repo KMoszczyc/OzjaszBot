@@ -22,10 +22,6 @@ function gotMessage(message) {
     console.log(message.content)
     let s = message.content;
 
-    if(message.content.startsWith(prefix)){
-        getRandomLine(message, 'ozjasz-wypowiedzi.txt');
-    }
-
     const serverQueue = queue.get(message.guild.id);
   
     if (message.content.startsWith(`${prefix}play`)) {
