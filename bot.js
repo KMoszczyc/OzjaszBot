@@ -70,7 +70,7 @@ function joinChannel(){
 }
 
 function commandList(message) {
-  var reply = 'Komendy: \n !oz \n !ozplay \n !ozskip \n !ozstop \n !ozqueue \n !ozhelp \n'
+  var reply = 'Komendy: \n !oz \n !ozplay \n !ozskip \n !ozstop \n !ozqueue \n !boczek \n !ozhelp \n'
   return message.channel.send(reply);
 }
 
@@ -104,7 +104,7 @@ async function execute(message, serverQueue) {
   }
 }
 
-function createQueue(message, song){
+async function createQueue(message, song){
   const queueContruct = {
     textChannel: message.channel,
     voiceChannel: voiceChannel,
@@ -171,15 +171,13 @@ function play(guild, song) {
   serverQueue.textChannel.send(`Start playing: **${song.title}**`);
 }
 
-
-function playAtTop(message, serverQueue) {
+async function playAtTop(message, serverQueue) {
   const songInfo = await ytdl.getInfo(url);
   const song = {
         title: songInfo.videoDetails.title,
         url: songInfo.videoDetails.video_url,
     };
-
-    serverQueue.songs.unshift(song);
+  serverQueue.songs.unshift(song);
 }
 
 function getRandomLine(message, filename){
