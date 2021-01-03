@@ -50,17 +50,15 @@ function gotMessage(message) {
             getQueue(message, serverQueue)
         } else if (messageNoPrefix.startsWith(`help`)) {
             commandList(message)
-        }
-
-        if (messageNoPrefix.startsWith('boczek')) {
+        } else if (messageNoPrefix.startsWith('boczek')) {
             getRandomLine("boczek-epitety.txt").then(sentence => {
                 message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to '+ sentence)
             })
-        } else if (message.content.startsWith(prefix)) {
+        } else {
             getRandomLine("ozjasz-wypowiedzi.txt").then(sentence => {
                 message.channel.send(sentence)
             })
-        }
+        } 
     }
 }
 
