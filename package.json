@@ -17,5 +17,8 @@
     "ffmpeg-static": "^4.2.7",
     "fluent-ffmpeg": "^2.1.2",
     "ytdl-core": "^4.3.1"
+  },
+  "devDependencies": {
+    "prettier": "2.2.1"
   }
 }
