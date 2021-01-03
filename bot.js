@@ -29,7 +29,6 @@ function gotMessage(message) {
     const serverQueue = queue.get(message.guild.id);
   
     if (message.content.startsWith(`${prefix}play`)) {
-      // joinChannel();
       execute(message, serverQueue);
       return;
     } else if (message.content.startsWith(`${prefix}skip`)) {
@@ -42,6 +41,12 @@ function gotMessage(message) {
     else if(message.content.startsWith(`${prefix}queue`)) {
       getQueue(message, serverQueue);
     }
+    else if(message.content.startsWith(`${prefix}help`)) {
+      commandList(message);
+    }
+    else if (message.content.startsWith(prefix)){
+      getRandomLine(message, 'ozjasz-wypowiedzi.txt');
+  }
 }
 
 function joinChannel(){
@@ -56,9 +61,14 @@ function joinChannel(){
   });
 }
 
+function commandList(message) {
+  var reply = 'Komendy: \n !oz \n !ozplay \n !ozskip \n !ozstop \n !ozqueue \n !ozhelp \n'
+  return message.channel.send(reply);
+}
+
 async function getQueue(message, serverQueue) {
   const voiceChannel = message.member.voice.channel;
-  let songList = 'The song queue is: \n';
+  let songList = 'A na drzewach zamiast liści..: \n';
   for(let i=0;i<serverQueue.songs.length;i++)
   {
     songList += (i+1).toString()+ '. '+ serverQueue.songs[i].title + '\n'
