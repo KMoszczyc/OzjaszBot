@@ -1,14 +1,15 @@
 console.log('beep beep! ')
+require('dotenv').config();
+
 const fs = require('fs');
 const Discord = require('discord.js');
 const ytdl = require("ytdl-core");
 
 const client = new Discord.Client();
-
 const prefix = '!oz'
 const queue = new Map();
 
-client.login('Nzk0ODk5NDEzMTU1NTc3ODY2.X_BhxA._CzfyBHYCmwuYLOa-1PWesge904');
+client.login(process.env.TOKEN);
 
 client.on('ready', readyDiscord);
 client.on('message', gotMessage);
