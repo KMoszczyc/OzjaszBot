@@ -24,7 +24,8 @@ function gotMessage(message) {
 
     const serverQueue = queue.get(message.guild.id);
   
-    if(message.content.contains('rynek')) {
+    //easter egg - paróweczki
+    if(message.content.includes('rynek')) {
       var url = 'https://www.youtube.com/watch?v=a9bBEbAO8Ik';
       return message.channel.send('!ozplay '+ url);
     }
