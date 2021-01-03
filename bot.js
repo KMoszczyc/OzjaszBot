@@ -27,7 +27,7 @@ function gotMessage(message) {
     //easter egg - paróweczki
     if(message.content.includes('rynek')) {
       var url = 'https://www.youtube.com/watch?v=a9bBEbAO8Ik';
-      return message.channel.send('!ozplay '+ url);
+      playAtTop(message, url);
     }
 
     //commands
@@ -50,6 +50,10 @@ function gotMessage(message) {
 
     if (message.content.startsWith(prefix)){
       getRandomLine(message, 'ozjasz-wypowiedzi.txt');
+    }
+
+    if (message.content.startsWith('!boczek')){
+      replyWithRandomLine(message, 'boczek-epitety.txt');
     }
 }
 
@@ -80,11 +84,128 @@ async function getQueue(message, serverQueue) {
   console.log(songList)
   return message.channel.send(songList);
 }
-  
-  async function execute(message, serverQueue) {
-    const args = message.content.split(" ");
-  
-    const voiceChannel = message.member.voice.channel;
+
+async function execute(message, serverQueue) {
+  const args = message.content.split(" ");
+
+  checkPermissions(message);
+
+  const songInfo = await ytdl.getInfo(args[1]);
+  const song = {
+        title: songInfo.videoDetails.title,
+        url: songInfo.videoDetails.video_url,
+    };
+
+  if (!serverQueue) {
+    createQueue();
+  } else {
+    serverQueue.songs.push(song);
+    return message.channel.send(`${song.title} has been added to the queue!`);
+  }
+}
+
+function createQueue(message, song){
+  const queueContruct = {
+    textChannel: message.channel,
+    voiceChannel: voiceChannel,
+    connection: null,
+    songs: [],
+    volume: 5,
+    playing: true
+  };
+
+  queue.set(message.guild.id, queueContruct);
+
+  queueContruct.songs.push(song);
+
+  try {
+    var connection = await voiceChannel.join();
+    queueContruct.connection = connection;
+    play(message.guild, queueContruct.songs[0]);
+  } catch (err) {p
+    console.log(err);
+    queue.delete(message.guild.id);
+    return message.channel.send(err);
+  }
+}
+
+function skip(message, serverQueue) {
+  if (!message.member.voice.channel)
+    return message.channel.send(
+      "You have to be in a voice channel to stop the music!"
+    );
+  if (!serverQueue)
+    return message.channel.send("There is no song that I could skip!");
+  serverQueue.connection.dispatcher.end();
+}
+
+function stop(message, serverQueue) {
+  if (!message.member.voice.channel)
+    return message.channel.send(
+      "You have to be in a voice channel to stop the music!"
+    );
+    
+  if (!serverQueue)
+    return message.channel.send("There is no song that I could stop!");
+    
+  serverQueue.songs = [];
+  serverQueue.connection.dispatcher.end();
+}
+
+function play(guild, song) {
+  const serverQueue = queue.get(guild.id);
+  if (!song) {
+    serverQueue.voiceChannel.leave();
+    queue.delete(guild.id);
+    return;
+  }
+
+  const dispatcher = serverQueue.connection
+    .play(ytdl(song.url))
+    .on("finish", () => {
+      serverQueue.songs.shift();
+      play(guild, serverQueue.songs[0]);
+    })
+    .on("error", error => console.error(error));
+  dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+  serverQueue.textChannel.send(`Start playing: **${song.title}**`);
+}
+
+
+function playAtTop(message, serverQueue) {
+  const songInfo = await ytdl.getInfo(url);
+  const song = {
+        title: songInfo.videoDetails.title,
+        url: songInfo.videoDetails.video_url,
+    };
+
+    serverQueue.songs.unshift(song);
+}
+
+function getRandomLine(message, filename){
+  var sentence = ''
+  fs.readFile(filename, function(err, data){
+    if(err) throw err;
+    data +='';
+    var lines = data.split('\n');
+    sentence = lines[Math.floor(Math.random()*lines.length)];
+    message.channel.send(sentence)
+  });
+}
+
+function replyWithRandomLine(message, filename){
+  var sentence = ''
+  fs.readFile(filename, function(err, data){
+    if(err) throw err;
+    data +='';
+    var lines = data.split('\n');
+    sentence = 'to '+ lines[Math.floor(Math.random()*lines.length)];
+    message.reply(sentence)
+  });
+}
+
+function checkPermissions(message) {
+  const voiceChannel = message.member.voice.channel;
     if (!voiceChannel)
       return message.channel.send(
         "You need to be in a voice channel to play music!"
@@ -95,92 +216,4 @@ async function getQueue(message, serverQueue) {
         "I need the permissions to join and speak in your voice channel!"
       );
     }
-  
-    const songInfo = await ytdl.getInfo(args[1]);
-    const song = {
-          title: songInfo.videoDetails.title,
-          url: songInfo.videoDetails.video_url,
-     };
-  
-    if (!serverQueue) {
-      const queueContruct = {
-        textChannel: message.channel,
-        voiceChannel: voiceChannel,
-        connection: null,
-        songs: [],
-        volume: 5,
-        playing: true
-      };
-  
-      queue.set(message.guild.id, queueContruct);
-  
-      queueContruct.songs.push(song);
-  
-      try {
-        var connection = await voiceChannel.join();
-        queueContruct.connection = connection;
-        play(message.guild, queueContruct.songs[0]);
-      } catch (err) {
-        console.log(err);
-        queue.delete(message.guild.id);
-        return message.channel.send(err);
-      }
-    } else {
-      serverQueue.songs.push(song);
-      return message.channel.send(`${song.title} has been added to the queue!`);
-    }
-  }
-  
-  function skip(message, serverQueue) {
-    if (!message.member.voice.channel)
-      return message.channel.send(
-        "You have to be in a voice channel to stop the music!"
-      );
-    if (!serverQueue)
-      return message.channel.send("There is no song that I could skip!");
-    serverQueue.connection.dispatcher.end();
-  }
-  
-  function stop(message, serverQueue) {
-    if (!message.member.voice.channel)
-      return message.channel.send(
-        "You have to be in a voice channel to stop the music!"
-      );
-      
-    if (!serverQueue)
-      return message.channel.send("There is no song that I could stop!");
-      
-    serverQueue.songs = [];
-    serverQueue.connection.dispatcher.end();
-  }
-  
-  function play(guild, song) {
-    const serverQueue = queue.get(guild.id);
-    if (!song) {
-      serverQueue.voiceChannel.leave();
-      queue.delete(guild.id);
-      return;
-    }
-  
-    const dispatcher = serverQueue.connection
-      .play(ytdl(song.url))
-      .on("finish", () => {
-        serverQueue.songs.shift();
-        play(guild, serverQueue.songs[0]);
-      })
-      .on("error", error => console.error(error));
-    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
-    serverQueue.textChannel.send(`Start playing: **${song.title}**`);
-  }
-
-
-  function getRandomLine(message, filename){
-    var sentence = ''
-    fs.readFile(filename, function(err, data){
-      if(err) throw err;
-      data +='';
-      var lines = data.split('\n');
-      sentence = lines[Math.floor(Math.random()*lines.length)];
-      message.channel.send(sentence)
-   });
-  }
+}
