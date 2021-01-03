@@ -44,9 +44,10 @@ function gotMessage(message) {
     else if(message.content.startsWith(`${prefix}help`)) {
       commandList(message);
     }
-    else if (message.content.startsWith(prefix)){
+
+    if (message.content.startsWith(prefix)){
       getRandomLine(message, 'ozjasz-wypowiedzi.txt');
-  }
+    }
 }
 
 function joinChannel(){
