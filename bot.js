@@ -61,7 +61,7 @@ async function getQueue(message, serverQueue) {
   let songList = 'The song queue is: \n';
   for(let i=0;i<serverQueue.songs.length;i++)
   {
-    songList += serverQueue.songs[i].title + '\n'
+    songList += (i+1).toString()+ '. '+ serverQueue.songs[i].title + '\n'
   }
   console.log(songList)
   return message.channel.send(songList);
