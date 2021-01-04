@@ -8,6 +8,9 @@ const fs = require('fs')
 
 const Discord = require('discord.js')
 const ytdl = require('ytdl-core')
+var search = require('youtube-search');
+
+const myRnId = () => parseInt(Date.now() * Math.random());
 
 const client = new Discord.Client()
 const prefix = '!oz'
@@ -18,47 +21,77 @@ client.login(process.env.TOKEN)
 client.on('ready', readyDiscord)
 client.on('message', gotMessage)
 
+
+var opts = {
+    maxResults: 5,
+    key: process.env.YOUTUBE_KEY
+  };
+
 function readyDiscord() {
     console.log('its ready already!')
+    console.log(myRnId())
 }
 
 function gotMessage(message) {
     console.log(message.content)
     const serverQueue = queue.get(message.guild.id)
 
-    //easter egg - paróweczki
-    if (message.content.toLowerCase().includes('rynek')) {
-        playAtTop(message, rynekUrl, serverQueue)
-    }
-    else if (message.content.toLowerCase().includes('rafon')) {
-        playAtTop(message, rafonUrl, serverQueue)
-    }
-    else if (message.content.toLowerCase().includes('pis')) {
-        playAtTop(message, stonogaUrl, serverQueue)
-    }
-
-    if(message.content.startsWith(`${prefix}`)) {
+    const messageSplit = message.content.split(' ')
+    if(messageSplit[0] === prefix) {
         var messageNoPrefix = message.content.split('!oz ').join('');
-        console.log(messageNoPrefix)
-        if (messageNoPrefix.startsWith(`play`)) {
-            execute(message, serverQueue)
-        } else if (messageNoPrefix.startsWith(`skip`)) {
-            skip(message, serverQueue)
-        } else if (messageNoPrefix.startsWith(`stop`)) {
-            stop(message, serverQueue)
-        } else if (messageNoPrefix.startsWith(`queue`)) {
-            getQueue(message, serverQueue)
-        } else if (messageNoPrefix.startsWith(`help`)) {
-            commandList(message)
-        } else if (messageNoPrefix.startsWith('boczek')) {
-            getRandomLine("boczek-epitety.txt").then(sentence => {
-                message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to '+ sentence)
-            })
-        } else {
+        
+        if(messageSplit.length<=1) {
             getRandomLine("ozjasz-wypowiedzi.txt").then(sentence => {
                 message.channel.send(sentence)
             })
-        } 
+        }
+        else {
+            switch(messageSplit[1]){
+               case `play`:
+                    playCommand(message, messageSplit, messageNoPrefix, serverQueue)
+                    break;
+                case `skip`:
+                    skipCommand(message, serverQueue)
+                    break;
+                case `stop`:
+                    stopCommand(message, serverQueue)
+                    break;
+                case `queue`:
+                    getQueueCommand(message, serverQueue)
+                    break;
+                case 'delete': 
+                    deleteSongCommand(messageSplit, serverQueue)
+                    break;
+                case `help`:
+                    commandList(message)
+                    break;
+                case 'boczek':
+                    getRandomLine("boczek-epitety.txt").then(sentence => {
+                        message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to '+ sentence)
+                    })
+                    break;  
+                case 'instrukcja':
+                    getRandomLine("instrukcja-lol.txt").then(sentence => {
+                        message.channel.send(sentence)
+                    })
+                    break;    
+                default:
+                    message.channel.send('Ma Pan dowód, że Hitler wiedział o takiej komendzie?  <:svastika:795768023465590824> <:lol:795769330154864670>');
+                    commandList(message);
+            }
+        }
+    }
+    else {
+        // //easter egg - paróweczki
+        // if (message.content.toLowerCase().includes('rynek')) {
+        //     playAtTop(message, rynekUrl, serverQueue)
+        // }
+        // else if (message.content.toLowerCase().includes('rafon')) {
+        //     playAtTop(message, rafonUrl, serverQueue)
+        // }
+        // else if (message.content.toLowerCase().includes('pis')) {
+        //     playAtTop(message, stonogaUrl, serverQueue)
+        // }
     }
 }
 
@@ -76,27 +109,53 @@ function joinChannel() {
         })
 }
 
+function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
+    if(messageSplit.length>=3) {
+        if(messageSplit[2].startsWith('http'))
+            execute(message, messageSplit[2], serverQueue)
+        else {
+            youtubeSearchUrl(messageNoPrefix.replace('play','')).then( url => {
+                console.log('url: ' + url)
+                execute(message, url, serverQueue)
+            })
+        }
+    }
+}
+
 function commandList(message) {
-    var reply = 'Komendy: \n !oz \n !oz play <url>\n !oz skip \n !oz stop \n !oz queue \n !oz boczek <coś>\n !oz help \n'
+    var reply = 'Komendy: \n !oz \n !oz play <tytuł lub url> \n !oz skip \n !oz stop \n !oz queue \n !oz delete <index>\n !oz boczek <coś>\n !oz instrukcja \n !oz help \n'
     return message.channel.send(reply)
 }
 
-async function getQueue(message, serverQueue) {
-    let songList = 'A na drzewach zamiast liści..: \n';
-    for (let i = 0; i < serverQueue.songs.length; i++) {
-        songList +=
-            (i + 1).toString() + '. \t' + serverQueue.songs[i].title + '\n'
+function deleteSongCommand(messageSplit, serverQueue){
+    if(messageSplit.length==3){
+        var index = parseInt(messageSplit[2], 10);
+        if(serverQueue != null && index-1<serverQueue.songs.length){
+            if(index-1 == 0)
+                serverQueue.connection.dispatcher.end()
+            else
+                serverQueue.songs.splice(index-1, 1);
+        }
     }
+}
+
+async function getQueueCommand(message, serverQueue) {
+    let songList = 'A na drzewach zamiast liści..: \n'; 
+    if(serverQueue != null){
+        for (let i = 0; i < serverQueue.songs.length; i++) {
+            songList +=
+                (i + 1).toString() + '. \t' + serverQueue.songs[i].title + '\n'
+        }
+    }
+
     console.log(songList)
     return message.channel.send(songList)
 }
 
-async function execute(message, serverQueue) {
-    const args = message.content.split(' ')
-
+async function execute(message, url, serverQueue) {
     checkPermissions(message)
 
-    const songInfo = await ytdl.getInfo(args[2])
+    const songInfo = await ytdl.getInfo(url)
     const song = {
         title: songInfo.videoDetails.title,
         url: songInfo.videoDetails.video_url,
@@ -138,7 +197,7 @@ async function createQueue(message, song) {
     }
 }
 
-function skip(message, serverQueue) {
+function skipCommand(message, serverQueue) {
     if (!message.member.voice.channel)
         return message.channel.send('You have to be in a voice channel to stop the music!')
     if (!serverQueue)
@@ -146,7 +205,7 @@ function skip(message, serverQueue) {
     serverQueue.connection.dispatcher.end()
 }
 
-function stop(message, serverQueue) {
+function stopCommand(message, serverQueue) {
     if (!message.member.voice.channel)
         return message.channel.send('You have to be in a voice channel to stop the music!')
 
@@ -231,4 +290,21 @@ function checkIfUrlInQueue(url, queue){
         }
     }
     return false;
+}
+
+async function youtubeSearchUrl(text){
+    return new Promise((resolve, reject) => {
+        search(text, opts, function(err, results) {
+        if(err) reject(err);
+        let index = 0;
+        for(let i=0; i<results.length;i++){
+            console.log(results[i].link);
+            if(results[i].kind === 'youtube#video'){
+                index = i;
+                break;
+            }
+        }
+        resolve(results[index].link);
+        });
+    })
 }
