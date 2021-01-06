@@ -25,6 +25,8 @@ client.login(process.env.TOKEN)
 client.on('ready', readyDiscord)
 client.on('message', gotMessage)
 
+
+
 var opts = {
     maxResults: 5,
     key: process.env.YOUTUBE_KEY
@@ -32,6 +34,7 @@ var opts = {
 
 function readyDiscord() {
     console.log('its ready already!')
+    client.user.setActivity('!oz help', { type: 'PLAYING' })
 }
 
 async function gotMessage(message) {
@@ -75,7 +78,7 @@ async function gotMessage(message) {
                     break;
                 case 'boczek':
                     getRandomLine("boczek-epitety.txt").then(sentence => {
-                        message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to '+ sentence)
+                        message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to ||'+ sentence+'||')
                     })
                     break;  
                 case 'instrukcja':
@@ -84,7 +87,7 @@ async function gotMessage(message) {
                     })
                     break;    
                 default:
-                    message.channel.send('Ma Pan dowód, że Hitler wiedział o takiej komendzie?  <:svastika:795768023465590824> <:lol:795769330154864670>');
+                    message.channel.send('Ma Pan dowód, że Hitler wiedział o takiej komendzie? ');
                     commandList(message);
             }
         }
@@ -131,7 +134,7 @@ function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
 }
 
 function commandList(message) {
-    var reply = 'Komendy: \n !oz \n !oz play <tytuł lub url> \n !oz skip \n !oz stop \n !oz queue \n !oz delete <index>\n !oz boczek <coś>\n !oz instrukcja \n !oz help \n'
+    var reply = 'Komendy: \n !oz \n !oz play <tytuł lub url> 🎵 \n !oz skip 🎵 \n !oz skipto <index> 🎵 \n !oz stop 🎵 \n !oz queue 🎵 \n !oz delete <index> 🎵 \n !oz boczek <coś> 🥓🥓🥓 \n !oz instrukcja \n !oz help \n'
     return message.channel.send(reply)
 }
 
@@ -148,13 +151,34 @@ function deleteSongCommand(messageSplit, serverQueue){
 }
 
 async function getQueueCommand(message, serverQueue) {
-    let songList = 'A na drzewach zamiast liści..: \n'; 
+    // let queueEmbed = new Discord.MessageEmbed()
+    // .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', client.user.avatarURL())
+    // .setColor(0xa62019)
+
+    let songList = `\`\`\`nim\n`;
+    songList+=`A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n\n`
+
+    let length = Math.min(20, serverQueue.songs.length)
+
+    let maxLength=0;
+    for (let i = 0; i < length; i++) {
+        if(maxLength<serverQueue.songs[i].title.length)
+            maxLength = serverQueue.songs[i].title.length;
+    }
+
+    console.log('max length: '+maxLength)
     if(serverQueue != null){
-        for (let i = 0; i < serverQueue.songs.length; i++) {
-            songList +=
-                (i + 1).toString() + '. \t' + serverQueue.songs[i].title + '\n'
+        for (let i = 0; i < length; i++) {
+            if(i+1<10)
+                songList+=` `
+            let spaces =  createSpaces(maxLength - serverQueue.songs[i].title.length + 4)
+            songList += `${(i + 1)}.\t${serverQueue.songs[i].title}${spaces}${serverQueue.songs[i].duration} \t\n`
         }
     }
+    songList+=`\n   \t+${serverQueue.songs.length-20} tracks in queue. 🎵 \n`
+    songList+=`\`\`\``
+
+    // queueEmbed.setDescription(songList)
 
     console.log(songList)
     return message.channel.send(songList)
@@ -167,6 +191,7 @@ async function addSong(message, url, serverQueue) {
     const song = {
         title: songInfo.videoDetails.title,
         url: songInfo.videoDetails.video_url,
+        duration: '0:00'
     }
 
     if (!serverQueue) {
@@ -175,7 +200,7 @@ async function addSong(message, url, serverQueue) {
     else if(!checkIfUrlInQueue(song.url, serverQueue)){
         serverQueue.songs.push(song)
         return message.channel.send(
-            `${song.title} has been added to the queue!`
+            `**${song.title}** has been added to the queue! 🎵 🎹 🎼  `
         )
     }
 }
@@ -322,12 +347,14 @@ async function youtubeSearchUrl(text){
         if(err) reject(err);
         let index = 0;
         for(let i=0; i<results.length;i++){
+            // console.log(results[i])
             console.log(results[i].link);
             if(results[i].kind === 'youtube#video'){
                 index = i;
                 break;
             }
         }
+
         resolve(results[index].link);
         });
     })
@@ -374,6 +401,7 @@ async function addPlaylist(message, messageSplit){
         var endIndex = url.indexOf('&index')
         var playListId = url.substring(startIndex+5, endIndex)
         
+        // part: 'id,snippet',
         console.log(playListId)
         var results = await new Promise(function(resolve, reject) {
             resolve(axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
@@ -386,13 +414,55 @@ async function addPlaylist(message, messageSplit){
             }))
         });
 
+        var songList = []
+        var songsCount=0;
+        var videoIds = ''
         for(let i=0;i<results.data.items.length; i++)
         {
-            var songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
-            console.log(songUrl)
-            const serverQueue = queue.get(message.guild.id)
-            await addSong(message, songUrl, serverQueue)
+            if(!(results.data.items[i].snippet.title === 'Private video' && results.data.items[i].snippet.description === 'This video is private.')) {
+                var songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
+                videoIds += results.data.items[i].snippet.resourceId.videoId + ','
+
+                const song = {
+                    title: results.data.items[i].snippet.title,
+                    url: songUrl,
+                }
+                songList.push(song)
+                
+                songsCount++;
+            }
         }
+        videoIds = videoIds.slice(0, -1)
+
+        var durationResults = await new Promise(function(resolve, reject) {
+            resolve(
+                axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+                    params: {
+                        part: 'contentDetails',
+                        id: videoIds,
+                        key: process.env.YOUTUBE_KEY
+                    }
+                })
+            )
+        })
+
+        for(let i=0;i<songList.length; i++)
+        {
+            const serverQueue = queue.get(message.guild.id)
+            
+            if(i==0)
+                await addSong(message, songUrl, serverQueue)
+            else {
+                const song = {
+                    title: songList[i].title,
+                    url: songList[i].url,
+                    duration: convertIsoTime(durationResults.data.items[i].contentDetails.duration)
+                }
+                serverQueue.songs.push(song)
+            }
+        }
+
+        message.channel.send(' Queued **' +songsCount +'** tracks')
     }
 }
 
@@ -400,4 +470,38 @@ async function addPlaylist(message, messageSplit){
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
+
+
+function convertIsoTime(isoTime){
+    var convertedTime = ''
+    isoTime = isoTime.substring(2)
+
+    var hourIndex = isoTime.indexOf('H')
+    var minIndex = isoTime.indexOf('M')
+    var secIndex = isoTime.indexOf('S')
+    if(hourIndex!=-1)
+        convertedTime+=isoTime.substring(0,hourIndex)
+
+    if(minIndex!=-1){
+        if(hourIndex!=-1)
+            convertedTime+=':'
+        convertedTime+=isoTime.substring(hourIndex+1,minIndex)+':'
+    }
+
+    if(secIndex!=-1){
+        var secondText = isoTime.substring(minIndex+1, isoTime.length-1)
+        var secondInt = parseInt(secondText, 10)
+        if(secondInt<10)
+            convertedTime+='0'
+        convertedTime+=secondText
+    }
+    else
+        convertedTime+='00'
+    
+        return convertedTime
+}
+
+function createSpaces(number){
+    return Array(number).fill('\xa0').join('')
+}
