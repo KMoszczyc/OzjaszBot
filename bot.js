@@ -13,6 +13,7 @@ var search = require('youtube-search');
 const { google } = require('googleapis');
 const youtube = google.youtube('v3');
 const axios = require('axios');
+const { time } = require('console')
 
 const myRnId = () => parseInt(Date.now() * Math.random());
 
@@ -35,6 +36,8 @@ var opts = {
 function readyDiscord() {
     console.log('its ready already!')
     client.user.setActivity('!oz help', { type: 'PLAYING' })
+
+    console.log(secondsToTime(178))
 }
 
 async function gotMessage(message) {
@@ -134,7 +137,12 @@ function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
 }
 
 function commandList(message) {
-    var reply = 'Komendy: \n !oz \n !oz play <tytuł lub url> 🎵 \n !oz skip 🎵 \n !oz skipto <index> 🎵 \n !oz stop 🎵 \n !oz queue 🎵 \n !oz delete <index> 🎵 \n !oz boczek <coś> 🥓🥓🥓 \n !oz instrukcja \n !oz help \n'
+    var reply =  new Discord.MessageEmbed()
+        .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', client.user.avatarURL())
+        .addField('Music 🎵🎵🎵', '!oz play <tytuł lub url> \n !oz playlist <url> \n !oz skip  \n !oz skipto <index>  \n !oz stop  \n !oz queue  \n !oz delete <index>')
+        .setColor(0xa62019)
+        .addField('Inne 🥓🥓🥓', '!oz  \n !oz boczek <coś> 🥓 \n !oz instrukcja \n !oz help \n')
+
     return message.channel.send(reply)
 }
 
@@ -155,11 +163,18 @@ async function getQueueCommand(message, serverQueue) {
     // .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', client.user.avatarURL())
     // .setColor(0xa62019)
 
+    if(serverQueue == null){
+        var reply =  new Discord.MessageEmbed()
+        .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', client.user.avatarURL())
+        .setDescription('... \n ...\n \n Pusty portfel, pusta kolejka..')
+        .setColor(0xa62019)
+        return message.channel.send(reply)
+    }
+    
     let songList = `\`\`\`nim\n`;
     songList+=`A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n\n`
 
-    let length = Math.min(20, serverQueue.songs.length)
-
+    let length = Math.min(10, serverQueue.songs.length)
     let maxLength=0;
     for (let i = 0; i < length; i++) {
         if(maxLength<serverQueue.songs[i].title.length)
@@ -175,7 +190,8 @@ async function getQueueCommand(message, serverQueue) {
             songList += `${(i + 1)}.\t${serverQueue.songs[i].title}${spaces}${serverQueue.songs[i].duration} \t\n`
         }
     }
-    songList+=`\n   \t+${serverQueue.songs.length-20} tracks in queue. 🎵 \n`
+    if(serverQueue.songs.length>10)
+        songList+=`\n   \t+${serverQueue.songs.length-10} tracks in queue. 🎵 \n`
     songList+=`\`\`\``
 
     // queueEmbed.setDescription(songList)
@@ -191,7 +207,7 @@ async function addSong(message, url, serverQueue) {
     const song = {
         title: songInfo.videoDetails.title,
         url: songInfo.videoDetails.video_url,
-        duration: '0:00'
+        duration: secondsToTime(songInfo.videoDetails.lengthSeconds)
     }
 
     if (!serverQueue) {
@@ -429,6 +445,7 @@ async function addPlaylist(message, messageSplit){
                 }
                 songList.push(song)
                 
+                console.log(song.title)
                 songsCount++;
             }
         }
@@ -451,7 +468,7 @@ async function addPlaylist(message, messageSplit){
             const serverQueue = queue.get(message.guild.id)
             
             if(i==0)
-                await addSong(message, songUrl, serverQueue)
+                await addSong(message, songList[i].url, serverQueue)
             else {
                 const song = {
                     title: songList[i].title,
@@ -504,4 +521,15 @@ function convertIsoTime(isoTime){
 
 function createSpaces(number){
     return Array(number).fill('\xa0').join('')
+}
+
+function secondsToTime(seconds){
+    var timeStr = new Date(seconds * 1000).toISOString().substr(11, 8);
+
+    if(seconds < 3600)
+        timeStr=timeStr.substring(3, timeStr.length)
+
+    if(seconds<600)
+        timeStr=timeStr.substring(1, timeStr.length)
+    return timeStr
 }
