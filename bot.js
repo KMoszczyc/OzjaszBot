@@ -139,7 +139,7 @@ function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
 function commandList(message) {
     var reply =  new Discord.MessageEmbed()
         .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', client.user.avatarURL())
-        .addField('Music 🎵🎵🎵', '!oz play <tytuł lub url> \n !oz playlist <url> \n !oz skip  \n !oz skipto <index>  \n !oz stop  \n !oz queue  \n !oz delete <index>')
+        .addField('Music 🎵🎵🎵', '!oz play [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index]  \n !oz stop  \n !oz queue  \n !oz delete [index]')
         .setColor(0xa62019)
         .addField('Inne 🥓🥓🥓', '!oz  \n !oz boczek <coś> 🥓 \n !oz instrukcja \n !oz help \n')
 
@@ -237,6 +237,7 @@ async function createQueue(message, song) {
 
     try {
         var connection = await voiceChannel.join()
+        connection.voice.setSelfDeaf(true);
         queueContruct.connection = connection
         play(message.guild, queueContruct.songs[0])
     } catch (err) {
