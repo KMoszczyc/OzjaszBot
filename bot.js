@@ -220,7 +220,7 @@ async function addSong(message, url, serverQueue) {
         serverQueue.songs.push(song)
 
         var reply =  new Discord.MessageEmbed()
-            .setDescription( `**${song.title}** stoi w kolejce po mięso w Polsce po 10 latach rządów Konfederacji! 🎵 🎵 🎵`)
+            .setDescription( `**${song.title}** stoi w kolejce po mięso w Polsce po 10 latach rządów Konfederacji! \t 🎵 🎵 🎵`)
             .setColor(0xa62019)
     
         return message.channel.send(reply)
@@ -307,7 +307,7 @@ function play(guild, song) {
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
 
     var reply =  new Discord.MessageEmbed()
-        .setDescription(`Teraz gramy: **${song.title}**! 🎵 🎵 🎵`)
+        .setDescription(`Teraz gramy: **${song.title}**! \t 🎵 🎵 🎵`)
         .setColor(0xa62019)
         
     serverQueue.textChannel.send(reply)
