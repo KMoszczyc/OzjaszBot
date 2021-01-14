@@ -210,14 +210,20 @@ async function addSong(message, url, serverQueue) {
         duration: secondsToTime(songInfo.videoDetails.lengthSeconds)
     }
 
+    if (song.title.length > 50)
+        song.title = song.title.substring(0, 50) + ".."
+
     if (!serverQueue) {
         createQueue(message, song);
     } 
     else if(!checkIfUrlInQueue(song.url, serverQueue)){
         serverQueue.songs.push(song)
-        return message.channel.send(
-            `**${song.title}** has been added to the queue! 🎵 🎹 🎼  `
-        )
+
+        var reply =  new Discord.MessageEmbed()
+            .setDescription( `**${song.title}** stoi w kolejce po mięso w Polsce po 10 latach rządów Konfederacji! 🎵 🎵 🎵`)
+            .setColor(0xa62019)
+    
+        return reply
     }
 }
 
@@ -248,18 +254,19 @@ async function createQueue(message, song) {
 }
 
 function skipCommand(message, serverQueue) {
+    
     if (!message.member.voice.channel)
-        return message.channel.send('You have to be in a voice channel to stop the music!')
+        return shortEmbedReply(message, `Musisz Pan na kanale być by móc pomijać!`)
     if (!serverQueue)
-        return message.channel.send('There is no song that I could skip!')
+        return shortEmbedReply(message, `Nie ma co pomijać Panie!`)
     serverQueue.connection.dispatcher.end()
 }
 
 function skipToCommand(message, messageSplit, serverQueue) {
     if (!message.member.voice.channel)
-        return message.channel.send('You have to be in a voice channel to stop the music!')
+        return shortEmbedReply(message, `Musisz Pan na kanale być by móc tyle pomijać!`)
     if (!serverQueue)
-        return message.channel.send('There is no song that I could skip!')
+        return shortEmbedReply(message, `Nie ma co pomijać Panie!`)
 
     if(messageSplit.length==3){
         var index = parseInt(messageSplit[2], 10);
@@ -273,10 +280,10 @@ function skipToCommand(message, messageSplit, serverQueue) {
 
 function stopCommand(message, serverQueue) {
     if (!message.member.voice.channel)
-        return message.channel.send('You have to be in a voice channel to stop the music!')
+        return shortEmbedReply(message, `Musisz Pan na kanale być by móc kolejke usuwać!`)
 
-    if (!serverQueue)
-        return message.channel.send('There is no song that I could stop!')
+    if (serverQueue==null)
+        return shortEmbedReply(message, `Nie ma co zatrzymywać Panie!`)
 
     serverQueue.songs = []
     serverQueue.connection.dispatcher.end()
@@ -298,7 +305,12 @@ function play(guild, song) {
         })
         .on('error', (error) => console.error(error))
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
-    serverQueue.textChannel.send(`Start playing: **${song.title}**`)
+
+    var reply =  new Discord.MessageEmbed()
+        .setDescription(`Teraz gramy: **${song.title}**! 🎵 🎵 🎵`)
+        .setColor(0xa62019)
+        
+    serverQueue.textChannel.send(reply)
 }
 
 async function playAtTop(message, url, serverQueue) { 
@@ -444,9 +456,10 @@ async function addPlaylist(message, messageSplit){
                     title: results.data.items[i].snippet.title,
                     url: songUrl,
                 }
+                if (song.title.length > 50)
+                    song.title = song.title.substring(0, 50) + ".."
+
                 songList.push(song)
-                
-                console.log(song.title)
                 songsCount++;
             }
         }
@@ -533,4 +546,8 @@ function secondsToTime(seconds){
     if(seconds<600)
         timeStr=timeStr.substring(1, timeStr.length)
     return timeStr
+}
+
+function shortEmbedReply(message, reply){
+    message.channel.send(new Discord.MessageEmbed().setDescription(reply).setColor(0xa62019))
 }
