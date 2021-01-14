@@ -223,7 +223,7 @@ async function addSong(message, url, serverQueue) {
             .setDescription( `**${song.title}** stoi w kolejce po mięso w Polsce po 10 latach rządów Konfederacji! 🎵 🎵 🎵`)
             .setColor(0xa62019)
     
-        return reply
+        return message.channel.send(reply)
     }
 }
 
