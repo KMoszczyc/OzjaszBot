@@ -558,9 +558,10 @@ function getRandomOzjasz(){
     var ozjaszEinReichUrl = 'https://www.youtube.com/watch?v=_FU--EfPmJ0'
     var jaszczur2Url = 'https://www.youtube.com/watch?v=V0hwtnJ5YAo'
     var jaszczur3Url = 'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj'
+    var major = 'https://www.youtube.com/watch?v=2vQhOH_oBHE&ab_channel=Wkl%C4%99s%C5%82yMajorSuchodolski&fbclid=IwAR07n6SQrbsKlYsgRiZ0wnafsDjMvjlXV02psGwEP8gnbxpdmqE5RX0oXZY'
+    var intermajor = 'https://www.youtube.com/watch?v=QP-N54BPz4Q'
 
-    var urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl]
-
+    var urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl, major, intermajor]
     return urls[Math.floor(Math.random() * urls.length)];
 }
 
