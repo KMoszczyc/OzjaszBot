@@ -7,7 +7,7 @@ require('dotenv').config()
 const fs = require('fs')
 const Discord = require('discord.js')
 const ytdl = require('ytdl-core')
-var search = require('youtube-search');
+const search = require('youtube-search');
 const axios = require('axios');
 
 const bot = new Discord.Client()
@@ -51,7 +51,7 @@ bot.on('voiceStateUpdate', (oldMember, newMember) => {
     }
 })
 
-var opts = {
+const opts = {
     maxResults: 5,
     key: process.env.YOUTUBE_KEY
   };
@@ -67,7 +67,7 @@ async function gotMessage(message) {
 
     const messageSplit = message.content.split(' ')
     if(messageSplit[0] === prefix) {
-        var messageNoPrefix = message.content.split('!oz ').join('');
+        let messageNoPrefix = message.content.split('!oz ').join('');
         
         if(messageSplit.length<=1) {
             getRandomLine("ozjasz-wypowiedzi.txt").then(sentence => {
@@ -168,7 +168,7 @@ async function playCommandHelper(message, messageSplit, messageNoPrefix, serverQ
 }
 
 function commandList(message) {
-    var reply =  new Discord.MessageEmbed()
+    const reply =  new Discord.MessageEmbed()
         .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', bot.user.avatarURL())
         .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index]', true)
         .setColor(0xa62019)
@@ -179,7 +179,7 @@ function commandList(message) {
 
 function deleteSongCommand(messageSplit, serverQueue){
     if(messageSplit.length==3){
-        var index = parseInt(messageSplit[2], 10);
+        const index = parseInt(messageSplit[2], 10);
         if(serverQueue != null && index>=1 && index-1<serverQueue.songs.length){
             if(index-1 == 0)
                 serverQueue.connection.dispatcher.end()
@@ -195,17 +195,17 @@ async function getQueueCommand(message, serverQueue) {
     // .setColor(0xa62019)
 
     if(serverQueue == null){
-        var reply =  new Discord.MessageEmbed()
-        .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', bot.user.avatarURL())
-        .setDescription('... \n ...\n \n Pusty portfel, pusta kolejka..')
-        .setColor(0xa62019)
+        const reply =  new Discord.MessageEmbed()
+            .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', bot.user.avatarURL())
+            .setDescription('... \n ...\n \n Pusty portfel, pusta kolejka..')
+            .setColor(0xa62019)
         return message.channel.send(reply)
     }
     
     let songList = `\`\`\`nim\n`;
     songList+=`A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n\n`
 
-    let length = Math.min(10, serverQueue.songs.length)
+    const length = Math.min(10, serverQueue.songs.length)
     let maxLength=0;
     for (let i = 0; i < length; i++) {
         if(maxLength<serverQueue.songs[i].title.length)
@@ -252,7 +252,7 @@ async function addSong(message, url, voiceChannel, serverQueue) {
             connectBot(message.guild.id, voiceChannel, serverQueue)
         }
 
-        var reply =  new Discord.MessageEmbed()
+        const reply =  new Discord.MessageEmbed()
             .setDescription(`[${song.title}](${song.url}) dodano do kolejki! \t`)
             .setColor(0xa62019)
     
@@ -261,7 +261,6 @@ async function addSong(message, url, voiceChannel, serverQueue) {
 }
 
 async function createQueue(message, voiceChannel, song) {
-    // const voiceChannel = message.member.voice.channel;
     const queueContruct = {
         textChannel: message.channel,
         voiceChannel: voiceChannel,
@@ -282,7 +281,7 @@ async function createQueue(message, voiceChannel, song) {
 
 async function connectBot(guildId, voiceChannel, queue){
     try {
-        var connection = await voiceChannel.join()
+        const connection = await voiceChannel.join()
         connection.voice.setSelfDeaf(true);
         queue.connection = connection
     } catch (err) {
@@ -294,7 +293,6 @@ async function connectBot(guildId, voiceChannel, queue){
 }
 
 async function skipCommand(message, serverQueue) {
-    
     if (!message.member.voice.channel)
         return shortEmbedReply(message, `Musisz Pan na kanale być by móc pomijać!`)
     if (!serverQueue)
@@ -309,7 +307,7 @@ async function skipToCommand(message, messageSplit, serverQueue) {
         return shortEmbedReply(message, `Nie ma co pomijać Panie!`)
 
     if(messageSplit.length==3){
-        var index = parseInt(messageSplit[2], 10);
+        const index = parseInt(messageSplit[2], 10);
         if(serverQueue != null && index>=2 && index-1<serverQueue.songs.length){
             serverQueue.songs.splice(1,index-2)
             serverQueue.connection.dispatcher.end()
@@ -345,7 +343,7 @@ async function play(guild, song) {
         .on('error', (error) => console.error(error))
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
 
-    var reply =  new Discord.MessageEmbed()
+    const reply =  new Discord.MessageEmbed()
         .setDescription(`Teraz gramy: [${song.title}](${song.url})! \t`)
         .setColor(0xa62019)
         
@@ -371,10 +369,10 @@ async function playAtTop(message, voiceChannel, url, serverQueue) {
 }
 
 async function getRandomLine(filename) {
-    var data = await readFile(filename)
+    let data = await readFile(filename)
     data += ''
-    var lines = data.split('\n')
-    var sentence = lines[Math.floor(Math.random() * lines.length)]
+    const lines = data.split('\n')
+    const sentence = lines[Math.floor(Math.random() * lines.length)]
     return sentence
 }
 
@@ -400,9 +398,8 @@ async function readFile(path) {
 
 function checkIfUrlInQueue(url, queue){
     if(queue != null){
-        var songs = queue.songs;
-        for(let i=0; i<songs.length;i++) {
-            if(songs[i].url == url) 
+        for(let i=0; i<queue.songs.length;i++) {
+            if(queue.songs[i].url == url) 
                 return true;
         }
     }
@@ -413,10 +410,9 @@ async function youtubeSearchUrl(text){
     return new Promise((resolve, reject) => {
         search(text, opts, function(err, results) {
         if(err) reject(err);
+
         let index = 0;
         for(let i=0; i<results.length;i++){
-            // console.log(results[i])
-            console.log(results[i].link);
             if(results[i].kind === 'youtube#video'){
                 index = i;
                 break;
@@ -430,14 +426,14 @@ async function youtubeSearchUrl(text){
 
 async function addPlaylist(message, messageSplit){
     if(messageSplit.length>=3 && messageSplit[2].startsWith('http')) {
-        var url = messageSplit[2];
+        const url = messageSplit[2];
         const startIndex = url.indexOf('list=')
-        var endIndex = url.indexOf('&index')
-        var playListId = url.substring(startIndex+5, endIndex)
+        const endIndex = url.indexOf('&index')
+        const playListId = url.substring(startIndex+5, endIndex)
         
         // part: 'id,snippet',
         console.log(playListId)
-        var results = await new Promise(function(resolve, reject) {
+        const results = await new Promise(function(resolve, reject) {
             resolve(axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
             params: {
                 part: 'id,snippet',
@@ -448,13 +444,13 @@ async function addPlaylist(message, messageSplit){
             }))
         });
 
-        var songList = []
-        var songsCount=0;
-        var videoIds = ''
+        let songList = []
+        let songsCount=0;
+        let videoIds = ''
         for(let i=0;i<results.data.items.length; i++)
         {
             if(!(results.data.items[i].snippet.title === 'Private video' && results.data.items[i].snippet.description === 'This video is private.')) {
-                var songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
+                const songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
                 videoIds += results.data.items[i].snippet.resourceId.videoId + ','
 
                 const song = {
@@ -468,7 +464,7 @@ async function addPlaylist(message, messageSplit){
         }
         videoIds = videoIds.slice(0, -1)
 
-        var durationResults = await new Promise(function(resolve, reject) {
+        const durationResults = await new Promise(function(resolve, reject) {
             resolve(
                 axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
                     params: {
@@ -499,19 +495,17 @@ async function addPlaylist(message, messageSplit){
     }
 }
 
-
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function convertIsoTime(isoTime){
-    var convertedTime = ''
+    let convertedTime = ''
     isoTime = isoTime.substring(2)
 
-    var hourIndex = isoTime.indexOf('H')
-    var minIndex = isoTime.indexOf('M')
-    var secIndex = isoTime.indexOf('S')
+    const hourIndex = isoTime.indexOf('H')
+    const minIndex = isoTime.indexOf('M')
+    const secIndex = isoTime.indexOf('S')
     if(hourIndex!=-1)
         convertedTime+=isoTime.substring(0,hourIndex)
 
@@ -522,8 +516,8 @@ function convertIsoTime(isoTime){
     }
 
     if(secIndex!=-1){
-        var secondText = isoTime.substring(minIndex+1, isoTime.length-1)
-        var secondInt = parseInt(secondText, 10)
+        let secondText = isoTime.substring(minIndex+1, isoTime.length-1)
+        let secondInt = parseInt(secondText, 10)
         if(secondInt<10)
             convertedTime+='0'
         convertedTime+=secondText
@@ -539,7 +533,7 @@ function createSpaces(number){
 }
 
 function secondsToTime(seconds){
-    var timeStr = new Date(seconds * 1000).toISOString().substr(11, 8);
+    let timeStr = new Date(seconds * 1000).toISOString().substr(11, 8);
 
     if(seconds < 3600)
         timeStr=timeStr.substring(3, timeStr.length)
@@ -554,14 +548,14 @@ function shortEmbedReply(message, reply){
 }
 
 function getRandomOzjasz(){
-    var jaszczurUrl = 'https://www.youtube.com/watch?v=aZ5mQhDrnwc';
-    var ozjaszEinReichUrl = 'https://www.youtube.com/watch?v=_FU--EfPmJ0'
-    var jaszczur2Url = 'https://www.youtube.com/watch?v=V0hwtnJ5YAo'
-    var jaszczur3Url = 'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj'
-    var major = 'https://www.youtube.com/watch?v=2vQhOH_oBHE&ab_channel=Wkl%C4%99s%C5%82yMajorSuchodolski&fbclid=IwAR07n6SQrbsKlYsgRiZ0wnafsDjMvjlXV02psGwEP8gnbxpdmqE5RX0oXZY'
-    var intermajor = 'https://www.youtube.com/watch?v=QP-N54BPz4Q'
+    const jaszczurUrl = 'https://www.youtube.com/watch?v=aZ5mQhDrnwc';
+    const ozjaszEinReichUrl = 'https://www.youtube.com/watch?v=_FU--EfPmJ0'
+    const jaszczur2Url = 'https://www.youtube.com/watch?v=V0hwtnJ5YAo'
+    const jaszczur3Url = 'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj'
+    const major = 'https://www.youtube.com/watch?v=2vQhOH_oBHE&ab_channel=Wkl%C4%99s%C5%82yMajorSuchodolski&fbclid=IwAR07n6SQrbsKlYsgRiZ0wnafsDjMvjlXV02psGwEP8gnbxpdmqE5RX0oXZY'
+    const intermajor = 'https://www.youtube.com/watch?v=QP-N54BPz4Q'
 
-    var urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl, major, intermajor]
+    const urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl, major, intermajor]
     return urls[Math.floor(Math.random() * urls.length)];
 }
 
