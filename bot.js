@@ -1,32 +1,55 @@
-const rafonUrl = 'https://www.youtube.com/watch?v=CvgG4nYoyUc'
-const rynekUrl = 'https://www.youtube.com/watch?v=a9bBEbAO8Ik'
-const stonogaUrl = 'https://www.youtube.com/watch?v=3KtVI3hRjc0'
+/* eslint-env node */
 
 const basicYTUrl = 'https://www.youtube.com/watch?v='
-
 console.log('beep beep! ')
+
 require('dotenv').config()
 const fs = require('fs')
 const Discord = require('discord.js')
 const ytdl = require('ytdl-core')
 var search = require('youtube-search');
-const { google } = require('googleapis');
-const youtube = google.youtube('v3');
 const axios = require('axios');
-const { time } = require('console')
 
-const myRnId = () => parseInt(Date.now() * Math.random());
-
-const client = new Discord.Client()
+const bot = new Discord.Client()
 const prefix = '!oz'
 const queue = new Map()
 
-client.login(process.env.TOKEN)
+bot.login(process.env.TOKEN)
 
-client.on('ready', readyDiscord)
-client.on('message', gotMessage)
+bot.on('ready', readyDiscord)
+bot.on('message', gotMessage)
 
+bot.on('voiceStateUpdate', (oldMember, newMember) => {
+    let oldVoice = oldMember.channelID; 
+    let newVoice = newMember.channelID; 
 
+    if (oldVoice != newVoice) {
+        if (oldVoice == null) {
+            if(newMember.id == bot.user.id) {
+                console.log("Ozjasz bot joined!");
+                let serverQueue = queue.get(newMember.guild.id)
+                if(serverQueue && serverQueue.songs!=[] && serverQueue.connection != null){
+                    console.log(serverQueue.songs[0])
+                    console.log(serverQueue.connection)
+                    connectBot(newMember.guild.id, newMember.channel, serverQueue).then(conn => {
+                        if(conn)
+                            play(newMember.guild, serverQueue.songs[0])
+                    })
+                }   
+            }
+            else
+                console.log("User joined!");
+        } else if (newVoice == null) {
+            if(oldMember.id == bot.user.id) {
+                console.log("Ozjasz bot left!");
+            }
+            else
+                console.log("User left!");
+        } else {
+            console.log("User switched channels!");
+        }
+    }
+})
 
 var opts = {
     maxResults: 5,
@@ -35,9 +58,7 @@ var opts = {
 
 function readyDiscord() {
     console.log('its ready already!')
-    client.user.setActivity('!oz help', { type: 'PLAYING' })
-
-    console.log(secondsToTime(178))
+    bot.user.setActivity('!oz help', { type: 'PLAYING' })
 }
 
 async function gotMessage(message) {
@@ -67,8 +88,20 @@ async function gotMessage(message) {
                 case `skipto`:
                     skipToCommand(message, messageSplit, serverQueue)
                     break;
-                case `stop`:
-                    stopCommand(message, serverQueue)
+                case 'pause': 
+                    if(checkPermissions && serverQueue.connection != null){
+                        console.log('pause')
+                        serverQueue.connection.dispatcher.pause()
+                    }
+                    break;
+                case 'resume': 
+                    if(checkPermissions && serverQueue.connection != null) {
+                        console.log('resume')
+                        serverQueue.connection.dispatcher.resume()
+                    }
+                    break;
+                case `clear`:
+                    clearCommand(message, serverQueue)
                     break;
                 case `queue`:
                     getQueueCommand(message, serverQueue)
@@ -81,7 +114,7 @@ async function gotMessage(message) {
                     break;
                 case 'boczek':
                     getRandomLine("boczek-epitety.txt").then(sentence => {
-                        message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to ||'+ sentence+'||')
+                        message.channel.send(messageNoPrefix.split('boczek ').join('')+ ' to '+ sentence)
                     })
                     break;  
                 case 'instrukcja':
@@ -89,59 +122,57 @@ async function gotMessage(message) {
                         message.channel.send(sentence)
                     })
                     break;    
+                case 'random': 
+                    if(messageSplit.length==3){
+                        let voiceChannel = getUserVoiceChannel(message, getUserId(messageSplit[2]))
+                        playAtTop(message, voiceChannel, getRandomOzjasz(), serverQueue)
+                    }
+                    else
+                        playAtTop(message, message.member.voice.channel, getRandomOzjasz(), serverQueue)
+                    break;
+                case 'join': 
+                    message.member.voice.channel.join();
+                    break;
                 default:
                     message.channel.send('Ma Pan dowód, że Hitler wiedział o takiej komendzie? ');
                     commandList(message);
             }
         }
     }
-    else {
-        // //easter egg - paróweczki
-        // if (message.content.toLowerCase().includes('rynek')) {
-        //     playAtTop(message, rynekUrl, serverQueue)
-        // }
-        // else if (message.content.toLowerCase().includes('rafon')) {
-        //     playAtTop(message, rafonUrl, serverQueue)
-        // }
-        // else if (message.content.toLowerCase().includes('pis')) {
-        //     playAtTop(message, stonogaUrl, serverQueue)
-        // }
+}
+
+async function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
+    if(messageSplit.length>=3) {
+        if(messageSplit[2].startsWith('<@!')){
+            let voiceChannel = getUserVoiceChannel(message, getUserId(messageSplit[2]))
+            playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 3, voiceChannel)
+        }
+        else {
+            playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 2, message.member.voice.channel)
+        }
     }
 }
 
-function joinChannel() {
-    const channel = client.channels.cache.get('692759541187739668')
-    if (!channel) return console.error('The channel does not exist!')
+async function playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel) {
+    if(messageSplit[urlIndex].startsWith('http'))
+            addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue)
+    else {
+        if(urlIndex==3)
+            messageNoPrefix = messageNoPrefix.replace(messageSplit[2],'')
 
-    channel.join().then(() => {
-            // Yay, it worked!
-            console.log('Successfully connected.')
+        youtubeSearchUrl(messageNoPrefix.replace('play','')).then( url => {
+            console.log('url: ' + url)
+            addSong(message, url, voiceChannel, serverQueue)
         })
-        .catch((e) => {
-            // Oh no, it errored! Let's log it to console :)
-            console.error(e)
-        })
-}
-
-function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
-    if(messageSplit.length>=3) {
-        if(messageSplit[2].startsWith('http'))
-            addSong(message, messageSplit[2], serverQueue)
-        else {
-            youtubeSearchUrl(messageNoPrefix.replace('play','')).then( url => {
-                console.log('url: ' + url)
-                addSong(message, url, serverQueue)
-            })
-        }
     }
 }
 
 function commandList(message) {
     var reply =  new Discord.MessageEmbed()
-        .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', client.user.avatarURL())
-        .addField('Music 🎵🎵🎵', '!oz play [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index]  \n !oz stop  \n !oz queue  \n !oz delete [index]')
+        .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', bot.user.avatarURL())
+        .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index]', true)
         .setColor(0xa62019)
-        .addField('Inne 🥓🥓🥓', '!oz  \n !oz boczek <coś> 🥓 \n !oz instrukcja \n !oz help \n')
+        .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true)
 
     return message.channel.send(reply)
 }
@@ -165,7 +196,7 @@ async function getQueueCommand(message, serverQueue) {
 
     if(serverQueue == null){
         var reply =  new Discord.MessageEmbed()
-        .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', client.user.avatarURL())
+        .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', bot.user.avatarURL())
         .setDescription('... \n ...\n \n Pusty portfel, pusta kolejka..')
         .setColor(0xa62019)
         return message.channel.send(reply)
@@ -200,35 +231,37 @@ async function getQueueCommand(message, serverQueue) {
     return message.channel.send(songList)
 }
 
-async function addSong(message, url, serverQueue) {
-    checkPermissions(message)
+async function addSong(message, url, voiceChannel, serverQueue) {
+    checkPermissions(message, voiceChannel)
 
     const songInfo = await ytdl.getInfo(url)
     const song = {
-        title: songInfo.videoDetails.title,
+        title: songInfo.videoDetails.title.slice(0, 50),
         url: songInfo.videoDetails.video_url,
         duration: secondsToTime(songInfo.videoDetails.lengthSeconds)
     }
 
-    if (song.title.length > 50)
-        song.title = song.title.substring(0, 50) + ".."
-
     if (!serverQueue) {
-        createQueue(message, song);
+        createQueue(message, voiceChannel, song);
     } 
     else if(!checkIfUrlInQueue(song.url, serverQueue)){
         serverQueue.songs.push(song)
 
+        if(!bot.voice.connections.some(conn => conn.channel.id == voiceChannel.id)){
+            console.log('hmm not connected')
+            connectBot(message.guild.id, voiceChannel, serverQueue)
+        }
+
         var reply =  new Discord.MessageEmbed()
-            .setDescription( `**${song.title}** stoi w kolejce po mięso w Polsce po 10 latach rządów Konfederacji! \t 🎵 🎵 🎵`)
+            .setDescription(`[${song.title}](${song.url}) dodano do kolejki! \t`)
             .setColor(0xa62019)
     
         return message.channel.send(reply)
     }
 }
 
-async function createQueue(message, song) {
-    const voiceChannel = message.member.voice.channel;
+async function createQueue(message, voiceChannel, song) {
+    // const voiceChannel = message.member.voice.channel;
     const queueContruct = {
         textChannel: message.channel,
         voiceChannel: voiceChannel,
@@ -241,19 +274,26 @@ async function createQueue(message, song) {
     queue.set(message.guild.id, queueContruct)
     queueContruct.songs.push(song)
 
+    connectBot(message.guild.id, voiceChannel, queue.get(message.guild.id)).then (conn => {
+        if(conn)
+            play(message.guild, queue.get(message.guild.id).songs[0])
+    })
+}
+
+async function connectBot(guildId, voiceChannel, queue){
     try {
         var connection = await voiceChannel.join()
         connection.voice.setSelfDeaf(true);
-        queueContruct.connection = connection
-        play(message.guild, queueContruct.songs[0])
+        queue.connection = connection
     } catch (err) {
         console.log(err)
-        queue.delete(message.guild.id)
-        return message.channel.send(err)
+        queue.delete(guildId)
+        return false
     }
+    return true
 }
 
-function skipCommand(message, serverQueue) {
+async function skipCommand(message, serverQueue) {
     
     if (!message.member.voice.channel)
         return shortEmbedReply(message, `Musisz Pan na kanale być by móc pomijać!`)
@@ -262,7 +302,7 @@ function skipCommand(message, serverQueue) {
     serverQueue.connection.dispatcher.end()
 }
 
-function skipToCommand(message, messageSplit, serverQueue) {
+async function skipToCommand(message, messageSplit, serverQueue) {
     if (!message.member.voice.channel)
         return shortEmbedReply(message, `Musisz Pan na kanale być by móc tyle pomijać!`)
     if (!serverQueue)
@@ -277,8 +317,7 @@ function skipToCommand(message, messageSplit, serverQueue) {
     }
 }
 
-
-function stopCommand(message, serverQueue) {
+async function clearCommand(message, serverQueue) {
     if (!message.member.voice.channel)
         return shortEmbedReply(message, `Musisz Pan na kanale być by móc kolejke usuwać!`)
 
@@ -289,7 +328,7 @@ function stopCommand(message, serverQueue) {
     serverQueue.connection.dispatcher.end()
 }
 
-function play(guild, song) {
+async function play(guild, song) {
     const serverQueue = queue.get(guild.id)
     if (!song) {
         serverQueue.voiceChannel.leave()
@@ -307,23 +346,24 @@ function play(guild, song) {
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
 
     var reply =  new Discord.MessageEmbed()
-        .setDescription(`Teraz gramy: **${song.title}**! \t 🎵 🎵 🎵`)
+        .setDescription(`Teraz gramy: [${song.title}](${song.url})! \t`)
         .setColor(0xa62019)
         
     serverQueue.textChannel.send(reply)
 }
 
-async function playAtTop(message, url, serverQueue) { 
-    checkPermissions(message);
+async function playAtTop(message, voiceChannel, url, serverQueue) { 
+    checkPermissions(message, voiceChannel);
 
     const songInfo = await ytdl.getInfo(url)
     const song = {
-        title: songInfo.videoDetails.title,
+        title: songInfo.videoDetails.title.slice(0, 50),
         url: songInfo.videoDetails.video_url,
+        duration: secondsToTime(songInfo.videoDetails.lengthSeconds)
     }
 
     if (!serverQueue) {
-        createQueue(message, song);
+        createQueue(message, voiceChannel, song);
     } else if(!checkIfUrlInQueue(song.url, serverQueue)) {
         play(message.guild, song)
         serverQueue.songs.unshift(song)
@@ -338,8 +378,7 @@ async function getRandomLine(filename) {
     return sentence
 }
 
-function checkPermissions(message) {
-    const voiceChannel = message.member.voice.channel
+function checkPermissions(message, voiceChannel) {
     if (!voiceChannel)
         return message.channel.send('You need to be in a voice channel to play music!')
     const permissions = voiceChannel.permissionsFor(message.client.user)
@@ -389,40 +428,6 @@ async function youtubeSearchUrl(text){
     })
 }
 
-// async function addPlaylist(message, messageSplit, serverQueue){
-//     if(messageSplit.length>=3 && messageSplit[2].startsWith('http')) {
-//         var url = messageSplit[2];
-//         const startIndex = url.indexOf('list=')
-//         var endIndex = url.indexOf('&index')
-//         var playListId = url.substring(startIndex+5, endIndex)
-        
-//         console.log(playListId)
-        
-//         var results = await new Promise(function(resolve, reject) {
-//             youtube.playlistItems.list({
-//                 key: process.env.YOUTUBE_KEY,
-//                 part: 'id,snippet',
-//                 playlistId: playListId,
-//                 maxResult: 100,
-//                 }, (err, results) => {
-                
-//                 if(err) reject(err)
-
-//                 resolve(results)
-//             });
-//         })
-
-        
-//         for(let i=0;i<results.data.items.length; i++)
-//         {
-//             var songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
-//             console.log(songUrl)
-//             const serverQueue = queue.get(message.guild.id)
-//             await addSong(message, songUrl, serverQueue)
-//         }
-//     }
-// }
-
 async function addPlaylist(message, messageSplit){
     if(messageSplit.length>=3 && messageSplit[2].startsWith('http')) {
         var url = messageSplit[2];
@@ -453,11 +458,9 @@ async function addPlaylist(message, messageSplit){
                 videoIds += results.data.items[i].snippet.resourceId.videoId + ','
 
                 const song = {
-                    title: results.data.items[i].snippet.title,
+                    title: results.data.items[i].snippet.title.slice(0, 50),
                     url: songUrl,
                 }
-                if (song.title.length > 50)
-                    song.title = song.title.substring(0, 50) + ".."
 
                 songList.push(song)
                 songsCount++;
@@ -492,7 +495,6 @@ async function addPlaylist(message, messageSplit){
                 serverQueue.songs.push(song)
             }
         }
-
         message.channel.send(' Queued **' +songsCount +'** tracks')
     }
 }
@@ -502,7 +504,6 @@ async function addPlaylist(message, messageSplit){
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 
 function convertIsoTime(isoTime){
     var convertedTime = ''
@@ -550,4 +551,23 @@ function secondsToTime(seconds){
 
 function shortEmbedReply(message, reply){
     message.channel.send(new Discord.MessageEmbed().setDescription(reply).setColor(0xa62019))
+}
+
+function getRandomOzjasz(){
+    var jaszczurUrl = 'https://www.youtube.com/watch?v=aZ5mQhDrnwc';
+    var ozjaszEinReichUrl = 'https://www.youtube.com/watch?v=_FU--EfPmJ0'
+    var jaszczur2Url = 'https://www.youtube.com/watch?v=V0hwtnJ5YAo'
+    var jaszczur3Url = 'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj'
+
+    var urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl]
+
+    return urls[Math.floor(Math.random() * urls.length)];
+}
+
+function getUserId(userRef){
+    return userRef.slice(3, userRef.length-1)
+}
+
+function getUserVoiceChannel(message, userId){
+   return message.guild.member(userId).voice.channel
 }
