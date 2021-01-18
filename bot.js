@@ -23,12 +23,12 @@ bot.on('voiceStateUpdate', (oldMember, newMember) => {
     let oldVoice = oldMember.channelID; 
     let newVoice = newMember.channelID; 
 
-    if (oldVoice != newVoice) {
+    if (oldVoice !== newVoice) {
         if (oldVoice == null) {
-            if(newMember.id == bot.user.id) {
+            if(newMember.id === bot.user.id) {
                 console.log("Ozjasz bot joined!");
                 let serverQueue = queue.get(newMember.guild.id)
-                if(serverQueue && serverQueue.songs!=[] && serverQueue.connection != null){
+                if(serverQueue && serverQueue.songs!==[] && serverQueue.connection != null){
                     console.log(serverQueue.songs[0])
                     console.log(serverQueue.connection)
                     connectBot(newMember.guild.id, newMember.channel, serverQueue).then(conn => {
@@ -40,7 +40,7 @@ bot.on('voiceStateUpdate', (oldMember, newMember) => {
             else
                 console.log("User joined!");
         } else if (newVoice == null) {
-            if(oldMember.id == bot.user.id) {
+            if(oldMember.id === bot.user.id) {
                 console.log("Ozjasz bot left!");
             }
             else
@@ -123,7 +123,7 @@ async function gotMessage(message) {
                     })
                     break;    
                 case 'random': 
-                    if(messageSplit.length==3){
+                    if(messageSplit.length===3){
                         let voiceChannel = getUserVoiceChannel(message, getUserId(messageSplit[2]))
                         playAtTop(message, voiceChannel, getRandomOzjasz(), serverQueue)
                     }
@@ -155,9 +155,9 @@ async function playCommand(message, messageSplit, messageNoPrefix, serverQueue) 
 
 async function playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel) {
     if(messageSplit[urlIndex].startsWith('http'))
-            addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue)
+        addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue)
     else {
-        if(urlIndex==3)
+        if(urlIndex===3)
             messageNoPrefix = messageNoPrefix.replace(messageSplit[2],'')
 
         youtubeSearchUrl(messageNoPrefix.replace('play','')).then( url => {
@@ -178,10 +178,10 @@ function commandList(message) {
 }
 
 function deleteSongCommand(messageSplit, serverQueue){
-    if(messageSplit.length==3){
+    if(messageSplit.length===3){
         const index = parseInt(messageSplit[2], 10);
         if(serverQueue != null && index>=1 && index-1<serverQueue.songs.length){
-            if(index-1 == 0)
+            if(index-1 === 0)
                 serverQueue.connection.dispatcher.end()
             else
                 serverQueue.songs.splice(index-1, 1);
@@ -213,7 +213,7 @@ async function getQueueCommand(message, serverQueue) {
     }
 
     console.log('max length: '+maxLength)
-    if(serverQueue != null){
+    if(serverQueue !== null){
         for (let i = 0; i < length; i++) {
             if(i+1<10)
                 songList+=` `
@@ -247,7 +247,7 @@ async function addSong(message, url, voiceChannel, serverQueue) {
     else if(!checkIfUrlInQueue(song.url, serverQueue)){
         serverQueue.songs.push(song)
 
-        if(!bot.voice.connections.some(conn => conn.channel.id == voiceChannel.id)){
+        if(!bot.voice.connections.some(conn => conn.channel.id === voiceChannel.id)){
             console.log('hmm not connected')
             connectBot(message.guild.id, voiceChannel, serverQueue)
         }
@@ -306,9 +306,9 @@ async function skipToCommand(message, messageSplit, serverQueue) {
     if (!serverQueue)
         return shortEmbedReply(message, `Nie ma co pomijać Panie!`)
 
-    if(messageSplit.length==3){
+    if(messageSplit.length===3){
         const index = parseInt(messageSplit[2], 10);
-        if(serverQueue != null && index>=2 && index-1<serverQueue.songs.length){
+        if(serverQueue !== null && index>=2 && index-1<serverQueue.songs.length){
             serverQueue.songs.splice(1,index-2)
             serverQueue.connection.dispatcher.end()
         }
@@ -372,8 +372,7 @@ async function getRandomLine(filename) {
     let data = await readFile(filename)
     data += ''
     const lines = data.split('\n')
-    const sentence = lines[Math.floor(Math.random() * lines.length)]
-    return sentence
+    return lines[Math.floor(Math.random() * lines.length)]
 }
 
 function checkPermissions(message, voiceChannel) {
@@ -399,7 +398,7 @@ async function readFile(path) {
 function checkIfUrlInQueue(url, queue){
     if(queue != null){
         for(let i=0; i<queue.songs.length;i++) {
-            if(queue.songs[i].url == url) 
+            if(queue.songs[i].url === url)
                 return true;
         }
     }
@@ -418,7 +417,6 @@ async function youtubeSearchUrl(text){
                 break;
             }
         }
-
         resolve(results[index].link);
         });
     })
@@ -480,7 +478,7 @@ async function addPlaylist(message, messageSplit){
         {
             const serverQueue = queue.get(message.guild.id)
             
-            if(i==0)
+            if(i===0)
                 await addSong(message, songList[i].url, serverQueue)
             else {
                 const song = {
@@ -506,16 +504,16 @@ function convertIsoTime(isoTime){
     const hourIndex = isoTime.indexOf('H')
     const minIndex = isoTime.indexOf('M')
     const secIndex = isoTime.indexOf('S')
-    if(hourIndex!=-1)
+    if(hourIndex!==-1)
         convertedTime+=isoTime.substring(0,hourIndex)
 
-    if(minIndex!=-1){
-        if(hourIndex!=-1)
+    if(minIndex!==-1){
+        if(hourIndex!==-1)
             convertedTime+=':'
         convertedTime+=isoTime.substring(hourIndex+1,minIndex)+':'
     }
 
-    if(secIndex!=-1){
+    if(secIndex!==-1){
         let secondText = isoTime.substring(minIndex+1, isoTime.length-1)
         let secondInt = parseInt(secondText, 10)
         if(secondInt<10)
