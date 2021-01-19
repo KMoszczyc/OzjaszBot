@@ -53,7 +53,8 @@ bot.on('voiceStateUpdate', (oldMember, newMember) => {
 
 const opts = {
     maxResults: 5,
-    key: process.env.YOUTUBE_KEY
+    key: process.env.YOUTUBE_KEY,
+    cookie: 'VISITOR_INFO1_LIVE=DuTUOgddbhM; CONSENT=YES+PL.pl+20150628-20-0; PREF=f6=400&al=pl&f4=4000000; HSID=Ayg4yB42k63WQJbQg; SSID=ASjFQU4T2gTP_9PLz; APISID=l3TqjFnBwVuNqQVy/AM3Df4taieT-uBFeR; SAPISID=D9X6qeLFNwdEl1xB/Agz7v7P3S-DMZr444; __Secure-3PAPISID=D9X6qeLFNwdEl1xB/Agz7v7P3S-DMZr444; SID=5weEILsLc7O_OIsQaYIKOVuKIkOfYyEmgSQW1-GYoIXUfJXDzQHxwt7cLFfIMlnFzlzz_A.; __Secure-3PSID=5weEILsLc7O_OIsQaYIKOVuKIkOfYyEmgSQW1-GYoIXUfJXDIATojIZqNtGS3uXtTTnjFQ.; LOGIN_INFO=AFmmF2swRgIhANo3dVu9biGIcFMwQTdcFzbUWiTf78ICGnwv77DkX-4qAiEA0ckE4E4s4cGV9aTEoUlU2-cL_V-lv03EZ4TsQZgYD9Y:QUQ3MjNmeWo0YnN1NzFLMmJ4ZkFheUIxd21STnpKbmdsOEpyTk5VcEl3RWlXc2I4LVh5REo0RlN3eW84amlqbzdFQ0lZYTh2aGF2SDNRMW1MQUtHVDdEVW1GbG54V0hsNlRZd0VURE4tUnVjR3Zua183Q1B4ZTM2WjJkMXIwd2J5TDBfNWNQYk1NaDAxN0lHWFRXMUdsbmRQRUNmbkNnUllDR3Y1SVJ5OEJVeUttWmtxejVZdXFB; YSC=hi5AOiYyWSc; SIDCC=AJi4QfF_HQxV3l12cKbNsdq7PAgglgOuKBjPITbol_8I7K5dcwCNIsiZvvusosFkoEQ5Q3zSU9w; __Secure-3PSIDCC=AJi4QfG22weWjM1s0C9i_INaVwNPSGicC0-52Mu4mlDXPtI191VfVvGxTd8k07wvDCXF19HUFFaq'
   };
 
 function readyDiscord() {
@@ -437,8 +438,8 @@ async function addPlaylist(message, messageSplit){
                 part: 'id,snippet',
                 maxResults: 100,
                 playlistId: playListId,
-                key: process.env.YOUTUBE_KEY
-            }
+                key: process.env.YOUTUBE_KEY,
+              }
             }))
         });
 

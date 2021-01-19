@@ -2,3 +2,10 @@
 .env
 .prettierrc
 .eslintrc.js
+.idea/modules.xml
+.idea/OzjaszBot.iml
+.idea/vcs.xml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/codeStyles/Project.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/.gitignore
