@@ -432,17 +432,15 @@ async function addPlaylist(message, messageSplit){
         
         // part: 'id,snippet',
         console.log(playListId)
-        const results = await new Promise(function(resolve, reject) {
-            resolve(axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
+        const results = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
             params: {
                 part: 'id,snippet',
                 maxResults: 100,
                 playlistId: playListId,
                 key: process.env.YOUTUBE_KEY,
-              }
-            }))
-        });
-
+            }
+        })
+        
         let songList = []
         let songsCount=0;
         let videoIds = ''
@@ -463,24 +461,20 @@ async function addPlaylist(message, messageSplit){
         }
         videoIds = videoIds.slice(0, -1)
 
-        const durationResults = await new Promise(function(resolve, reject) {
-            resolve(
-                axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
-                    params: {
-                        part: 'contentDetails',
-                        id: videoIds,
-                        key: process.env.YOUTUBE_KEY
-                    }
-                })
-            )
+        const durationResults = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+            params: {
+                part: 'contentDetails',
+                id: videoIds,
+                key: process.env.YOUTUBE_KEY
+            }
         })
-
+            
         for(let i=0;i<songList.length; i++)
         {
             const serverQueue = queue.get(message.guild.id)
             
             if(i===0)
-                await addSong(message, songList[i].url, serverQueue)
+                await addSong(message, songList[i].url, message.member.voice.channel, serverQueue)
             else {
                 const song = {
                     title: songList[i].title,
