@@ -9,13 +9,19 @@ const Discord = require('discord.js')
 const ytdl = require('ytdl-core')
 const search = require('youtube-search');
 const axios = require('axios');
+const SpotifyWebApi = require('spotify-web-api-node');
 
 const bot = new Discord.Client()
 const prefix = '!oz'
 const queue = new Map()
 
-bot.login(process.env.TOKEN)
+var spotifyApi = new SpotifyWebApi({
+    clientId: process.env.SPOTIFY_CLIENT,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    redirectUri: 'http://www.example.com/callback'
+  });
 
+bot.login(process.env.TOKEN)
 bot.on('ready', readyDiscord)
 bot.on('message', gotMessage)
 
@@ -53,13 +59,27 @@ bot.on('voiceStateUpdate', (oldMember, newMember) => {
 
 const opts = {
     maxResults: 5,
-    key: process.env.YOUTUBE_KEY,
-    cookie: 'VISITOR_INFO1_LIVE=DuTUOgddbhM; CONSENT=YES+PL.pl+20150628-20-0; PREF=f6=400&al=pl&f4=4000000; HSID=Ayg4yB42k63WQJbQg; SSID=ASjFQU4T2gTP_9PLz; APISID=l3TqjFnBwVuNqQVy/AM3Df4taieT-uBFeR; SAPISID=D9X6qeLFNwdEl1xB/Agz7v7P3S-DMZr444; __Secure-3PAPISID=D9X6qeLFNwdEl1xB/Agz7v7P3S-DMZr444; SID=5weEILsLc7O_OIsQaYIKOVuKIkOfYyEmgSQW1-GYoIXUfJXDzQHxwt7cLFfIMlnFzlzz_A.; __Secure-3PSID=5weEILsLc7O_OIsQaYIKOVuKIkOfYyEmgSQW1-GYoIXUfJXDIATojIZqNtGS3uXtTTnjFQ.; LOGIN_INFO=AFmmF2swRgIhANo3dVu9biGIcFMwQTdcFzbUWiTf78ICGnwv77DkX-4qAiEA0ckE4E4s4cGV9aTEoUlU2-cL_V-lv03EZ4TsQZgYD9Y:QUQ3MjNmeWo0YnN1NzFLMmJ4ZkFheUIxd21STnpKbmdsOEpyTk5VcEl3RWlXc2I4LVh5REo0RlN3eW84amlqbzdFQ0lZYTh2aGF2SDNRMW1MQUtHVDdEVW1GbG54V0hsNlRZd0VURE4tUnVjR3Zua183Q1B4ZTM2WjJkMXIwd2J5TDBfNWNQYk1NaDAxN0lHWFRXMUdsbmRQRUNmbkNnUllDR3Y1SVJ5OEJVeUttWmtxejVZdXFB; YSC=hi5AOiYyWSc; SIDCC=AJi4QfF_HQxV3l12cKbNsdq7PAgglgOuKBjPITbol_8I7K5dcwCNIsiZvvusosFkoEQ5Q3zSU9w; __Secure-3PSIDCC=AJi4QfG22weWjM1s0C9i_INaVwNPSGicC0-52Mu4mlDXPtI191VfVvGxTd8k07wvDCXF19HUFFaq'
+    key: process.env.YOUTUBE_KEY
   };
-
+  
 function readyDiscord() {
     console.log('its ready already!')
     bot.user.setActivity('!oz help', { type: 'PLAYING' })
+
+    spotifyApi.setAccessToken(process.env.SPOTIFY_ACCESS_TOKEN);
+    newToken();
+    setInterval(() => newToken(), 1000 * 60 * 60);
+}
+
+function newToken(){
+    spotifyApi.clientCredentialsGrant().then(
+        function(data) {
+            spotifyApi.setAccessToken(data.body['access_token']);
+        },
+        function(err) {
+            console.log(err)
+        }
+    );
 }
 
 async function gotMessage(message) {
@@ -81,7 +101,10 @@ async function gotMessage(message) {
                     playCommand(message, messageSplit, messageNoPrefix, serverQueue)
                     break;
                 case `playlist`:
-                    addPlaylist(message, messageSplit)
+                    if(messageSplit.length==3 && messageSplit[2].startsWith('https://www.youtube.com/'))
+                        youtubePlaylist(message, messageSplit[2])
+                    else if(messageSplit.length==3 && messageSplit[2].startsWith('https://open.spotify.com/playlist/')) 
+                        spotifyPlayList(message, messageSplit[2])
                     break;
                 case `skip`:
                     skipCommand(message, serverQueue)
@@ -134,12 +157,39 @@ async function gotMessage(message) {
                 case 'join': 
                     message.member.voice.channel.join();
                     break;
+                case 'spotify': 
+                    spotifyPlayList(message, )
+                break;
                 default:
-                    message.channel.send('Ma Pan dowód, że Hitler wiedział o takiej komendzie? ');
                     commandList(message);
             }
         }
     }
+}
+
+async function spotifyPlayList(message, url){
+    const playlist_id = url.split('playlist/')[1]
+    const results = await spotifyApi.getPlaylist(playlist_id)
+    const resultsLength = Math.min(5, results.body.tracks.items.length)
+
+    for(let i=0;i<resultsLength; i++)
+    {
+        const serverQueue = queue.get(message.guild.id)
+        const title = results.body.tracks.items[i].track.name + ' - ' + results.body.tracks.items[i].track.artists[0].name
+        const yt_result = await youtubeSearchUrl(title)
+
+        if(i===0 && serverQueue == null)
+            await addSong(message, yt_result.link, message.member.voice.channel, serverQueue)
+        else if(!checkIfUrlInQueue(yt_result.link)) {
+            const song = {
+                title: title,
+                url: yt_result.link,
+                duration: secondsToTime(results.body.tracks.items[i].track.duration_ms/1000)
+            }
+            serverQueue.songs.push(song)
+        }
+    }
+    message.channel.send(' Queued **' +resultsLength +'** tracks')
 }
 
 async function playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
@@ -161,16 +211,16 @@ async function playCommandHelper(message, messageSplit, messageNoPrefix, serverQ
         if(urlIndex===3)
             messageNoPrefix = messageNoPrefix.replace(messageSplit[2],'')
 
-        youtubeSearchUrl(messageNoPrefix.replace('play','')).then( url => {
-            console.log('url: ' + url)
-            addSong(message, url, voiceChannel, serverQueue)
+        youtubeSearchUrl(messageNoPrefix.replace('play','')).then( results => {
+            console.log('url: ' + results.link)
+            addSong(message, results.link, voiceChannel, serverQueue)
         })
     }
 }
 
 function commandList(message) {
     const reply =  new Discord.MessageEmbed()
-        .setAuthor('Zgubiłeś się lewaku, zapomniałeś odpowiednich słów? .. \n', bot.user.avatarURL())
+        .setAuthor('Ma Pan dowód, że Hitler wiedział o takiej komendzie? \n', bot.user.avatarURL())
         .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index]', true)
         .setColor(0xa62019)
         .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true)
@@ -418,74 +468,70 @@ async function youtubeSearchUrl(text){
                 break;
             }
         }
-        resolve(results[index].link);
+        resolve(results[index]);
         });
     })
 }
 
-async function addPlaylist(message, messageSplit){
-    if(messageSplit.length>=3 && messageSplit[2].startsWith('http')) {
-        const url = messageSplit[2];
-        const startIndex = url.indexOf('list=')
-        const endIndex = url.indexOf('&index')
-        const playListId = url.substring(startIndex+5, endIndex)
-        
-        // part: 'id,snippet',
-        console.log(playListId)
-        const results = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
-            params: {
-                part: 'id,snippet',
-                maxResults: 100,
-                playlistId: playListId,
-                key: process.env.YOUTUBE_KEY,
-            }
-        })
-        
-        let songList = []
-        let songsCount=0;
-        let videoIds = ''
-        for(let i=0;i<results.data.items.length; i++)
-        {
-            if(!(results.data.items[i].snippet.title === 'Private video' && results.data.items[i].snippet.description === 'This video is private.')) {
-                const songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
-                videoIds += results.data.items[i].snippet.resourceId.videoId + ','
-
-                const song = {
-                    title: results.data.items[i].snippet.title.slice(0, 50),
-                    url: songUrl,
-                }
-
-                songList.push(song)
-                songsCount++;
-            }
+async function youtubePlaylist(message, url){
+    const startIndex = url.indexOf('list=')
+    const endIndex = url.indexOf('&index')
+    const playListId = url.substring(startIndex+5, endIndex==-1? url.length : endIndex)
+    
+    // part: 'id,snippet',
+    console.log(playListId)
+    const results = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
+        params: {
+            part: 'id,snippet',
+            maxResults: 100,
+            playlistId: playListId,
+            key: process.env.YOUTUBE_KEY,
         }
-        videoIds = videoIds.slice(0, -1)
+    })
+    
+    let songList = []
+    let songsCount=0;
+    let videoIds = ''
+    for(let i=0;i<results.data.items.length; i++)
+    {
+        if(!(results.data.items[i].snippet.title === 'Private video' && results.data.items[i].snippet.description === 'This video is private.')) {
+            const songUrl = basicYTUrl + results.data.items[i].snippet.resourceId.videoId
+            videoIds += results.data.items[i].snippet.resourceId.videoId + ','
 
-        const durationResults = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
-            params: {
-                part: 'contentDetails',
-                id: videoIds,
-                key: process.env.YOUTUBE_KEY
+            const song = {
+                title: results.data.items[i].snippet.title.length>50? results.data.items[i].snippet.title.slice(0,50)+'...' : results.data.items[i].snippet.title,
+                url: songUrl,
             }
-        })
-            
-        for(let i=0;i<songList.length; i++)
-        {
-            const serverQueue = queue.get(message.guild.id)
-            
-            if(i===0)
-                await addSong(message, songList[i].url, message.member.voice.channel, serverQueue)
-            else {
-                const song = {
-                    title: songList[i].title,
-                    url: songList[i].url,
-                    duration: convertIsoTime(durationResults.data.items[i].contentDetails.duration)
-                }
-                serverQueue.songs.push(song)
-            }
+
+            songList.push(song)
+            songsCount++;
         }
-        message.channel.send(' Queued **' +songsCount +'** tracks')
     }
+    videoIds = videoIds.slice(0, -1)
+
+    const durationResults = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+        params: {
+            part: 'contentDetails',
+            id: videoIds,
+            key: process.env.YOUTUBE_KEY
+        }
+    })
+        
+    for(let i=0;i<songList.length; i++)
+    {
+        const serverQueue = queue.get(message.guild.id)
+        if(i===0 && serverQueue == null)
+            await addSong(message, songList[i].url, message.member.voice.channel, serverQueue)
+        else if(!checkIfUrlInQueue(songList[i].url)) {
+            const song = {
+                title: songList[i].title,
+                url: songList[i].url,
+                duration: convertIsoTime(durationResults.data.items[i].contentDetails.duration)
+            }
+            serverQueue.songs.push(song)
+        }
+    }
+    message.channel.send(' Queued **' +songsCount +'** tracks') 
 }
 
 function sleep(ms) {
