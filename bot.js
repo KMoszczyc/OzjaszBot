@@ -155,7 +155,8 @@ async function gotMessage(message) {
                         playAtTop(message, message.member.voice.channel, getRandomOzjasz(), serverQueue)
                     break;
                 case 'join': 
-                    message.member.voice.channel.join();
+                    // message.member.voice.channel.join();
+                    createQueue(message, message.member.voice.channel, null);
                     break;
                 case 'spotify': 
                     spotifyPlayList(message, )
@@ -326,7 +327,8 @@ async function createQueue(message, voiceChannel, song) {
 
     connectBot(message.guild.id, voiceChannel, queue.get(message.guild.id)).then (conn => {
         if(conn)
-            play(message.guild, queue.get(message.guild.id).songs[0])
+            playMp3(message.guild, 'ozjasz.mp3')
+        // play(message.guild, queue.get(message.guild.id).songs[0])
     })
 }
 
@@ -370,8 +372,8 @@ async function clearCommand(message, serverQueue) {
     if (!message.member.voice.channel)
         return shortEmbedReply(message, `Musisz Pan na kanale być by móc kolejke usuwać!`)
 
-    if (serverQueue==null)
-        return shortEmbedReply(message, `Nie ma co zatrzymywać Panie!`)
+    if (serverQueue===null || serverQueue.connection===null || serverQueue.connection.dispatcher===null)
+        return shortEmbedReply(message, `Nie ma co czyścić Panie!`)
 
     serverQueue.songs = []
     serverQueue.connection.dispatcher.end()
@@ -399,6 +401,17 @@ async function play(guild, song) {
         .setColor(0xa62019)
         
     serverQueue.textChannel.send(reply)
+}
+
+async function playMp3(guild, songPath) {
+    const serverQueue = queue.get(guild.id)
+    const dispatcher = serverQueue.connection.play(songPath)
+    .on('finish', () => {
+        if(serverQueue.songs[0]!=null)
+            play(guild, serverQueue.songs[0])
+    })
+    .on('error', (error) => console.error(error))
+    dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
 }
 
 async function playAtTop(message, voiceChannel, url, serverQueue) { 
