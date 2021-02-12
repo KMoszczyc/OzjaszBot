@@ -10,6 +10,7 @@ const ytdl = require('ytdl-core')
 const search = require('youtube-search');
 const axios = require('axios');
 const SpotifyWebApi = require('spotify-web-api-node');
+const translate = require('translation-google');
 
 const bot = new Discord.Client()
 const prefix = '!oz'
@@ -159,12 +160,30 @@ async function gotMessage(message) {
                     createQueue(message, message.member.voice.channel, null);
                     break;
                 case 'spotify': 
-                    spotifyPlayList(message, )
+                    spotifyPlayList(message)
+                break;
+                case 'guess': 
+                    console.log('halo1')
+                    predictSentiment(message, messageNoPrefix.split('guess').join(''))
                 break;
                 default:
                     commandList(message);
             }
         }
+    }
+}
+async function predictSentiment(message, sentence) {
+    try {
+        const englishSentence = await translate(sentence, {from: 'pl', to: 'en'});
+        console.log(englishSentence.text)
+
+        // const results = await axios.post('http://127.0.0.1:5000/api/sentiment', { text: englishSentence.text })
+        const results = await axios.post('https://sentiment-predictor.herokuapp.com/api/sentiment', { text: englishSentence.text })
+        const response = results.data[0].predictions == 0? 'very bad' : 'very nice'
+
+        message.channel.send(response)
+    } catch(e){
+        console.log(e)
     }
 }
 

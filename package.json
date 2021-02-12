@@ -19,7 +19,8 @@
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^66.0.0",
     "spotify-web-api-node": "^5.0.2",
-    "youtube-search": "^1.1.4",
+    "translation-google": "^0.2.1",
+    "youtube-search": "^1.1.6",
     "ytdl-core": "^4.4.0"
   },
   "devDependencies": {
