@@ -163,7 +163,6 @@ async function gotMessage(message) {
                     spotifyPlayList(message)
                 break;
                 case 'guess': 
-                    console.log('halo1')
                     predictSentiment(message, messageNoPrefix.split('guess').join(''))
                 break;
                 default:
@@ -180,7 +179,7 @@ async function predictSentiment(message, sentence) {
         // const results = await axios.post('http://127.0.0.1:5000/api/sentiment', { text: englishSentence.text })
         const results = await axios.post('https://sentiment-predictor.herokuapp.com/api/sentiment', { text: englishSentence.text })
         let response = results.data[0].predictions == 0? 'very bad' : 'very nice'
-        response += ' - ' + roundToTwo(results.data[0].probability) +'%'
+        response += ' - ' + Math.floor(results.data[0].probability*100) +'%'
 
         message.channel.send(response)
     } catch(e){
