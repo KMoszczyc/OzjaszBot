@@ -179,7 +179,8 @@ async function predictSentiment(message, sentence) {
 
         // const results = await axios.post('http://127.0.0.1:5000/api/sentiment', { text: englishSentence.text })
         const results = await axios.post('https://sentiment-predictor.herokuapp.com/api/sentiment', { text: englishSentence.text })
-        const response = results.data[0].predictions == 0? 'very bad' : 'very nice'
+        let response = results.data[0].predictions == 0? 'very bad' : 'very nice'
+        response += ' - ' + roundToTwo(results.data[0].probability) +'%'
 
         message.channel.send(response)
     } catch(e){
@@ -243,7 +244,7 @@ function commandList(message) {
         .setAuthor('Ma Pan dowód, że Hitler wiedział o takiej komendzie? \n', bot.user.avatarURL())
         .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index]', true)
         .setColor(0xa62019)
-        .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true)
+        .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz guess [coś] \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true)
 
     return message.channel.send(reply)
 }
@@ -636,4 +637,8 @@ function getUserId(userRef){
 
 function getUserVoiceChannel(message, userId){
    return message.guild.member(userId).voice.channel
+}
+
+function roundToTwo(num) {    
+    return +(Math.round(num + "e+2")  + "e-2");
 }
