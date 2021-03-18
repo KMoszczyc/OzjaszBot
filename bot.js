@@ -11,6 +11,7 @@ const search = require('youtube-search');
 const axios = require('axios');
 const SpotifyWebApi = require('spotify-web-api-node');
 const translate = require('translation-google');
+const lyricsFinder = require('lyrics-finder');
 
 const bot = new Discord.Client()
 const prefix = '!oz'
@@ -165,6 +166,17 @@ async function gotMessage(message) {
                 case 'guess': 
                     predictSentiment(message, messageNoPrefix.split('guess').join(''))
                 break;
+                case 'lyrics':
+                    if(serverQueue && serverQueue.songs!==[] && serverQueue.connection != null)
+                    {
+                        lyricsFinder('', serverQueue.songs[0].title).then(lyrics => {
+                            sendEmbeds(serverQueue.songs[0].title, lyrics, message)
+                        })
+                    } 
+                    else
+                        shortEmbedReply(message, 'Panie co pan, kolejka pusta przecie!')
+
+                break;
                 default:
                     commandList(message);
             }
@@ -240,8 +252,8 @@ async function playCommandHelper(message, messageSplit, messageNoPrefix, serverQ
 
 function commandList(message) {
     const reply =  new Discord.MessageEmbed()
-        .setAuthor('Ma Pan dowód, że Hitler wiedział o takiej komendzie? \n', bot.user.avatarURL())
-        .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index]', true)
+        .setAuthor('Oto komendy.. \n', bot.user.avatarURL())
+        .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index] \n !oz lyrics', true)
         .setColor(0xa62019)
         .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz guess [coś] \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true)
 
@@ -641,3 +653,18 @@ function getUserVoiceChannel(message, userId){
 function roundToTwo(num) {    
     return +(Math.round(num + "e+2")  + "e-2");
 }
+
+async function sendEmbeds(title, text, message) {
+    const message_embed = new Discord.MessageEmbed()
+    .setColor(0xa62019)
+    .setTitle(title)
+    let prevIndex=0;
+    for(let i = 500; i < text.length; i += 500) {
+        const index = text.substring(i, Math.min(text.length, i+500)).indexOf('\n');
+        console.log(i, index)
+        const toSend = text.substring(prevIndex, index+i)
+        prevIndex = index +i
+        message_embed.addField('\u200B', toSend)
+    }
+    message.channel.send(message_embed)
+  }
