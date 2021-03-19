@@ -19,6 +19,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^66.0.0",
     "lyrics-finder": "^21.7.0",
+    "song-lyrics-api": "git+https://github.com/s0ftik3/lyrics-api.git",
     "spotify-web-api-node": "^5.0.2",
     "translation-google": "^0.2.1",
     "youtube-search": "^1.1.6",

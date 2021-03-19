@@ -12,6 +12,9 @@ const axios = require('axios');
 const SpotifyWebApi = require('spotify-web-api-node');
 const translate = require('translation-google');
 const lyricsFinder = require('lyrics-finder');
+// const Lyrics = require('song-lyrics-api');
+// const Lyrics = require('./lyrics.js');
+// const lyrics = new Lyrics();
 
 const bot = new Discord.Client()
 const prefix = '!oz'
@@ -22,6 +25,8 @@ var spotifyApi = new SpotifyWebApi({
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
     redirectUri: 'http://www.example.com/callback'
   });
+
+let ytOptions =  { Cookie: 'VISITOR_INFO1_LIVE=DuTUOgddbhM; CONSENT=YES+PL.pl+20150628-20-0; LOGIN_INFO=AFmmF2swRgIhANo3dVu9biGIcFMwQTdcFzbUWiTf78ICGnwv77DkX-4qAiEA0ckE4E4s4cGV9aTEoUlU2-cL_V-lv03EZ4TsQZgYD9Y:QUQ3MjNmeWo0YnN1NzFLMmJ4ZkFheUIxd21STnpKbmdsOEpyTk5VcEl3RWlXc2I4LVh5REo0RlN3eW84amlqbzdFQ0lZYTh2aGF2SDNRMW1MQUtHVDdEVW1GbG54V0hsNlRZd0VURE4tUnVjR3Zua183Q1B4ZTM2WjJkMXIwd2J5TDBfNWNQYk1NaDAxN0lHWFRXMUdsbmRQRUNmbkNnUllDR3Y1SVJ5OEJVeUttWmtxejVZdXFB; SID=7geEIMmxW4xMdMnF3I9X27BizhnblTBMJE1HwffKjLb4NAaqMTEls_-oLUJJhuycTjY1gQ.; __Secure-3PSID=7geEIMmxW4xMdMnF3I9X27BizhnblTBMJE1HwffKjLb4NAaqsCLw-_n14BP4IXXKEMeqLA.; HSID=Ac_o_-pdNQRuuuofL; SSID=A3IMuF9Ur220OFOyE; APISID=zo7dWHJCYOw7DnwH/AK8LvlzSUCTBO3gyM; SAPISID=4MJ8Qj03O6Ugtwqn/AnwhcPqOwhL019YeR; __Secure-3PAPISID=4MJ8Qj03O6Ugtwqn/AnwhcPqOwhL019YeR; PREF=f6=400&tz=Europe.Warsaw&al=pl&f4=4000000&f5=20000&volume=100; YSC=Q0DxCtyR5qk; SIDCC=AJi4QfHaJM6DmJ2zt8cSctoOJEinibSGsonSLiqHaNA4_y42GzXfPXSZOp23qFYAr1a_MqLenIU; __Secure-3PSIDCC=AJi4QfH-AzWS5LglLepCFBnMvKmG7RnKsMqpUH-rHdHyR8v6iYeLLutn2Ada9mfdWrXAFZbukMuh' }
 
 bot.login(process.env.TOKEN)
 bot.on('ready', readyDiscord)
@@ -167,15 +172,7 @@ async function gotMessage(message) {
                     predictSentiment(message, messageNoPrefix.split('guess').join(''))
                 break;
                 case 'lyrics':
-                    if(serverQueue && serverQueue.songs!==[] && serverQueue.connection != null)
-                    {
-                        lyricsFinder('', serverQueue.songs[0].title).then(lyrics => {
-                            sendEmbeds(serverQueue.songs[0].title, lyrics, message)
-                        })
-                    } 
-                    else
-                        shortEmbedReply(message, 'Panie co pan, kolejka pusta przecie!')
-
+                    findLyrics(message, serverQueue)
                 break;
                 default:
                     commandList(message);
@@ -183,6 +180,27 @@ async function gotMessage(message) {
         }
     }
 }
+
+async function findLyrics(message, serverQueue) {
+    if(serverQueue && serverQueue.songs!==[] && serverQueue.connection != null)
+    {
+        let author = ''
+        let title = serverQueue.songs[0].full_title
+        if(title.includes('-')){
+            const splitTitle = title.split('-')
+            author = splitTitle[0]
+            title = splitTitle[1]
+        }
+        
+        console.log(author, title)
+        lyricsFinder(author, title).then(lyrics => {
+            sendEmbeds(serverQueue.songs[0].full_title, lyrics, message)
+        })
+    } 
+    else
+        shortEmbedReply(message, 'Panie co pan, kolejka pusta przecie!')
+}
+
 async function predictSentiment(message, sentence) {
     try {
         const englishSentence = await translate(sentence, {from: 'pl', to: 'en'});
@@ -317,9 +335,15 @@ async function getQueueCommand(message, serverQueue) {
 async function addSong(message, url, voiceChannel, serverQueue) {
     checkPermissions(message, voiceChannel)
 
-    const songInfo = await ytdl.getInfo(url)
+    const songInfo = await ytdl.getInfo(url, { requestOptions: ytOptions })
+
+    let title = songInfo.videoDetails.title
+    if(title.length>50)
+        title = title.slice(0, 47)+'...'
+
     const song = {
-        title: songInfo.videoDetails.title.slice(0, 50),
+        title: title,
+        full_title: songInfo.videoDetails.title,
         url: songInfo.videoDetails.video_url,
         duration: secondsToTime(songInfo.videoDetails.lengthSeconds)
     }
@@ -336,7 +360,7 @@ async function addSong(message, url, voiceChannel, serverQueue) {
         }
 
         const reply =  new Discord.MessageEmbed()
-            .setDescription(`[${song.title}](${song.url}) dodano do kolejki! \t`)
+            .setDescription(`[${song.full_title}](${song.url}) dodano do kolejki! \t`)
             .setColor(0xa62019)
     
         return message.channel.send(reply)
@@ -419,7 +443,7 @@ async function play(guild, song) {
     }
 
     const dispatcher = serverQueue.connection
-        .play(ytdl(song.url, {filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1<<25 }), {highWaterMark: 1})
+        .play(ytdl(song.url, {filter: 'audioonly', quality: 'highestaudio', highWaterMark: 1<<25, requestOptions: ytOptions }), {highWaterMark: 1})
         .on('finish', () => {
             serverQueue.songs.shift()
             play(guild, serverQueue.songs[0])
@@ -428,7 +452,7 @@ async function play(guild, song) {
     dispatcher.setVolumeLogarithmic(serverQueue.volume / 5)
 
     const reply =  new Discord.MessageEmbed()
-        .setDescription(`Teraz gramy: [${song.title}](${song.url})! \t`)
+        .setDescription(`Teraz gramy: [${song.full_title}](${song.url})! \t`)
         .setColor(0xa62019)
         
     serverQueue.textChannel.send(reply)
@@ -448,7 +472,7 @@ async function playMp3(guild, songPath) {
 async function playAtTop(message, voiceChannel, url, serverQueue) { 
     checkPermissions(message, voiceChannel);
 
-    const songInfo = await ytdl.getInfo(url)
+    const songInfo = await ytdl.getInfo(url, {requestOptions: ytOptions})
     const song = {
         title: songInfo.videoDetails.title.slice(0, 50),
         url: songInfo.videoDetails.video_url,
@@ -662,8 +686,9 @@ async function sendEmbeds(title, text, message) {
     for(let i = 500; i < text.length; i += 500) {
         const index = text.substring(i, Math.min(text.length, i+500)).indexOf('\n');
         console.log(i, index)
-        const toSend = text.substring(prevIndex, index+i)
-        prevIndex = index +i
+        let toSend = text.substring(prevIndex, index+i)
+        prevIndex = index + i
+
         message_embed.addField('\u200B', toSend)
     }
     message.channel.send(message_embed)
