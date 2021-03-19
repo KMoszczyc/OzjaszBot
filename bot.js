@@ -26,8 +26,7 @@ var spotifyApi = new SpotifyWebApi({
     redirectUri: 'http://www.example.com/callback'
   });
 
-let ytOptions =  { Cookie: 'VISITOR_INFO1_LIVE=DuTUOgddbhM; CONSENT=YES+PL.pl+20150628-20-0; LOGIN_INFO=AFmmF2swRgIhANo3dVu9biGIcFMwQTdcFzbUWiTf78ICGnwv77DkX-4qAiEA0ckE4E4s4cGV9aTEoUlU2-cL_V-lv03EZ4TsQZgYD9Y:QUQ3MjNmeWo0YnN1NzFLMmJ4ZkFheUIxd21STnpKbmdsOEpyTk5VcEl3RWlXc2I4LVh5REo0RlN3eW84amlqbzdFQ0lZYTh2aGF2SDNRMW1MQUtHVDdEVW1GbG54V0hsNlRZd0VURE4tUnVjR3Zua183Q1B4ZTM2WjJkMXIwd2J5TDBfNWNQYk1NaDAxN0lHWFRXMUdsbmRQRUNmbkNnUllDR3Y1SVJ5OEJVeUttWmtxejVZdXFB; SID=7geEIMmxW4xMdMnF3I9X27BizhnblTBMJE1HwffKjLb4NAaqMTEls_-oLUJJhuycTjY1gQ.; __Secure-3PSID=7geEIMmxW4xMdMnF3I9X27BizhnblTBMJE1HwffKjLb4NAaqsCLw-_n14BP4IXXKEMeqLA.; HSID=Ac_o_-pdNQRuuuofL; SSID=A3IMuF9Ur220OFOyE; APISID=zo7dWHJCYOw7DnwH/AK8LvlzSUCTBO3gyM; SAPISID=4MJ8Qj03O6Ugtwqn/AnwhcPqOwhL019YeR; __Secure-3PAPISID=4MJ8Qj03O6Ugtwqn/AnwhcPqOwhL019YeR; PREF=f6=400&tz=Europe.Warsaw&al=pl&f4=4000000&f5=20000&volume=100; YSC=Q0DxCtyR5qk; SIDCC=AJi4QfHaJM6DmJ2zt8cSctoOJEinibSGsonSLiqHaNA4_y42GzXfPXSZOp23qFYAr1a_MqLenIU; __Secure-3PSIDCC=AJi4QfH-AzWS5LglLepCFBnMvKmG7RnKsMqpUH-rHdHyR8v6iYeLLutn2Ada9mfdWrXAFZbukMuh' }
-
+let ytOptions =  { Cookie: 'SIDCC=AJi4QfFhj7Y49ta-u9AM-lzvW5D0trjzlhxIeGiHKAZ6cYELvY5xj-X6f1aMmYvvxXiiJqCbFHo;'}
 bot.login(process.env.TOKEN)
 bot.on('ready', readyDiscord)
 bot.on('message', gotMessage)
