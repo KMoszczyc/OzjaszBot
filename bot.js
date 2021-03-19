@@ -26,7 +26,7 @@ var spotifyApi = new SpotifyWebApi({
     redirectUri: 'http://www.example.com/callback'
   });
 
-let ytOptions =  { Cookie: process.env.COOKIE}
+let ytOptions =  { Cookie: 'SIDCC=AJi4QfFhj7Y49ta-u9AM-lzvW5D0trjzlhxIeGiHKAZ6cYELvY5xj-X6f1aMmYvvxXiiJqCbFHo;'}
 bot.login(process.env.TOKEN)
 bot.on('ready', readyDiscord)
 bot.on('message', gotMessage)
