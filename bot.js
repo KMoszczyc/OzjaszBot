@@ -206,8 +206,10 @@ async function predictSentiment(message, sentence) {
         console.log(englishSentence.text)
 
         // const results = await axios.post('http://127.0.0.1:5000/api/sentiment', { text: englishSentence.text })
-        const results = await axios.post('https://sentiment-predictor.herokuapp.com/api/sentiment', { text: englishSentence.text })
-        let response = results.data[0].predictions == 0? 'very bad' : 'very nice'
+        // const results = await axios.post('https://sentiment-predictor.herokuapp.com/api/sentiment', { text: englishSentence.text })
+        const results = await axios.post('https://sentiment-prediction-deepl.herokuapp.com/predict', { text: englishSentence.text })
+        console.log(results.data[0])
+        let response = results.data[0].prediction == 0? 'negative' : 'positive'
         response += ' - ' + Math.floor(results.data[0].probability*100) +'%'
 
         message.channel.send(response)
