@@ -18,7 +18,7 @@ const spotifyApi = new SpotifyWebApi({
 });
 
 const ytOptions = {
-    Cookie: 'SIDCC=AJi4QfFhj7Y49ta-u9AM-lzvW5D0trjzlhxIeGiHKAZ6cYELvY5xj-X6f1aMmYvvxXiiJqCbFHo;'
+    Cookie: process.env.COOKIE
 };
 
 const opts = {
