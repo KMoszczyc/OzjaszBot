@@ -26,10 +26,18 @@ const opts = {
     key: process.env.YOUTUBE_KEY
 };
 
-module.exports = class Music {
+const LoopState = Object.freeze({
+    LoopAll:  Symbol("LoopAll"),
+    LoopOne:  Symbol("LoopOne"),
+    LoopNone: Symbol("LoopNone")
+});
+
+class Music {
     constructor(client){
         this.queue = new Map();
         this.client = client;
+        this.loopState = LoopState.LoopNone;
+        this.currentSongIndex=0;
     }
 
     setupSpotify(){
@@ -171,6 +179,12 @@ module.exports = class Music {
         }
         if (serverQueue.songs.length > 10)
             songList += `\n   \t+${serverQueue.songs.length-10} tracks in queue. 🎵 \n`;
+
+        if(this.loopState == LoopState.LoopAll)
+            songList += `\n This queue is on loop!`;
+        else if(this.loopState == LoopState.LoopOne)
+            songList += `\n\n ${serverQueue.songs[this.currentSongIndex].full_title} is on loop!`;
+
         songList += `\`\`\``;
 
         return message.channel.send(songList);
@@ -270,6 +284,7 @@ module.exports = class Music {
 
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
+        this.currentSongIndex=0;
     }
 
     async play(guild, song) {
@@ -290,8 +305,15 @@ module.exports = class Music {
                 highWaterMark: 1
             })
             .on('finish', () => {
-                serverQueue.songs.shift();
-                this.play(guild, serverQueue.songs[0]);
+                if(this.loopState==LoopState.LoopNone)
+                    serverQueue.songs.shift();
+                else if(this.loopState==LoopState.LoopAll)
+                    this.currentSongIndex++;
+                
+                if(this.currentSongIndex >= serverQueue.songs.length)
+                    this.currentSongIndex=0;
+                
+                this.play(guild, serverQueue.songs[this.currentSongIndex]);
             })
             .on('error', (error) => console.error(error));
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
@@ -453,4 +475,7 @@ module.exports = class Music {
         const urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl, major, intermajor];
         return urls[Math.floor(Math.random() * urls.length)];
     }
- };
+}
+
+module.exports.Music = Music;
+module.exports.LoopState = LoopState;

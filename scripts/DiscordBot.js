@@ -14,7 +14,7 @@ console.log('beep beep! ');
 module.exports = class DiscordBot {
     constructor() {
         this.client = new Discord.Client();
-        this.music = new Music(this.client);
+        this.music = new Music.Music(this.client);
         this.prefix = '!oz';
 
         this.client.login(process.env.TOKEN);
@@ -91,6 +91,18 @@ module.exports = class DiscordBot {
                     case 'delete':
                         this.music.deleteSongCommand(messageSplit, serverQueue);
                         break;
+                    case 'loop':
+                        this.music.loopState = Music.LoopState.LoopAll;
+                        Utils.shortEmbedReply(message, 'We are looping now!');
+                        break;
+                    case 'loopone':
+                        this.music.loopState = Music.LoopState.LoopOne;
+                        Utils.shortEmbedReply(message, 'We are looping current song!');
+                        break;
+                    case 'loopnone':
+                        this.music.loopState = Music.LoopState.LoopNone;
+                        Utils.shortEmbedReply(message, 'We are not looping anymore.');
+                        break;
                     case `help`:
                         this.commandList(message);
                         break;
@@ -155,7 +167,7 @@ module.exports = class DiscordBot {
     async commandList(message) {
         const reply = new Discord.MessageEmbed()
             .setAuthor('Oto komendy.. \n', this.client.user.avatarURL())
-            .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index] \n !oz lyrics', true)
+            .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index] \n !oz lyrics \n !oz loop \n !oz loopone \n !oz loopnone' , true)
             .setColor(0xa62019)
             .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz guess [coś] \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true);
 
