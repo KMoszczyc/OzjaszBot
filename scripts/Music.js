@@ -36,7 +36,6 @@ class Music {
     constructor(client){
         this.queue = new Map();
         this.client = client;
-        this.loopState = LoopState.LoopNone;
         this.currentSongIndex=0;
     }
 
@@ -88,7 +87,8 @@ class Music {
                 author = splitTitle[0];
                 title = splitTitle[1];
             }
-            const titleCut = title.replace(/\(.*\)/g,"").split('ft.')[0];
+            let titleCut = title.replace(/\(.*\)/g,"").split('ft.')[0];
+            titleCut = title.replace(/\[.*\]/g,"").split('ft.')[0];
 
             console.log(author, titleCut);
             lyricsFinder(author, titleCut).then(lyrics => {
@@ -180,9 +180,9 @@ class Music {
         if (serverQueue.songs.length > 10)
             songList += `\n   \t+${serverQueue.songs.length-10} tracks in queue. 🎵 \n`;
 
-        if(this.loopState == LoopState.LoopAll)
+        if(serverQueue.loopState == LoopState.LoopAll)
             songList += `\n This queue is on loop!`;
-        else if(this.loopState == LoopState.LoopOne)
+        else if(serverQueue.loopState == LoopState.LoopOne)
             songList += `\n\n ${serverQueue.songs[this.currentSongIndex].full_title} is on loop!`;
 
         songList += `\`\`\``;
@@ -236,6 +236,7 @@ class Music {
             songs: [],
             volume: 5,
             playing: true,
+            loop: LoopState.LoopNone,
         };
 
         this.queue.set(message.guild.id, queueContruct);
@@ -305,9 +306,9 @@ class Music {
                 highWaterMark: 1
             })
             .on('finish', () => {
-                if(this.loopState==LoopState.LoopNone)
+                if(serverQueue.loopState == LoopState.LoopNone)
                     serverQueue.songs.shift();
-                else if(this.loopState==LoopState.LoopAll)
+                else if(serverQueue.loopState == LoopState.LoopAll)
                     this.currentSongIndex++;
                 
                 if(this.currentSongIndex >= serverQueue.songs.length)

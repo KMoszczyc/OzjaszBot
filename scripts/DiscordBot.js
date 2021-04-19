@@ -50,6 +50,7 @@ module.exports = class DiscordBot {
     async gotMessage(message) {
         console.log(message.content);
         const serverQueue = this.music.queue.get(message.guild.id);
+        
 
         const messageSplit = message.content.split(' ');
         if (messageSplit[0] === this.prefix) {
@@ -92,15 +93,15 @@ module.exports = class DiscordBot {
                         this.music.deleteSongCommand(messageSplit, serverQueue);
                         break;
                     case 'loop':
-                        this.music.loopState = Music.LoopState.LoopAll;
+                        serverQueue.loopState = Music.LoopState.LoopAll;
                         Utils.shortEmbedReply(message, 'We are looping now!');
                         break;
                     case 'loopone':
-                        this.music.loopState = Music.LoopState.LoopOne;
+                        serverQueue.loopState = Music.LoopState.LoopOne;
                         Utils.shortEmbedReply(message, 'We are looping current song!');
                         break;
                     case 'loopnone':
-                        this.music.loopState = Music.LoopState.LoopNone;
+                        serverQueue.loopState = Music.LoopState.LoopNone;
                         Utils.shortEmbedReply(message, 'We are not looping anymore.');
                         break;
                     case `help`:
