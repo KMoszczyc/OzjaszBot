@@ -36,7 +36,6 @@ class Music {
     constructor(client){
         this.queue = new Map();
         this.client = client;
-        this.currentSongIndex=0;
     }
 
     setupSpotify(){
@@ -183,7 +182,7 @@ class Music {
         if(serverQueue.loopState == LoopState.LoopAll)
             songList += `\n This queue is on loop!`;
         else if(serverQueue.loopState == LoopState.LoopOne)
-            songList += `\n\n ${serverQueue.songs[this.currentSongIndex].full_title} is on loop!`;
+            songList += `\n\n ${serverQueue.songs[serverQueue.currentSongIndex].full_title} is on loop!`;
 
         songList += `\`\`\``;
 
@@ -237,6 +236,7 @@ class Music {
             volume: 5,
             playing: true,
             loop: LoopState.LoopNone,
+            currentSongIndex: 0,
         };
 
         this.queue.set(message.guild.id, queueContruct);
@@ -285,7 +285,7 @@ class Music {
 
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
-        this.currentSongIndex=0;
+        serverQueue.currentSongIndex=0;
     }
 
     async play(guild, song) {
@@ -306,15 +306,17 @@ class Music {
                 highWaterMark: 1
             })
             .on('finish', () => {
+                console.log(serverQueue.loopState);
+
                 if(serverQueue.loopState == LoopState.LoopNone)
                     serverQueue.songs.shift();
                 else if(serverQueue.loopState == LoopState.LoopAll)
-                    this.currentSongIndex++;
+                    serverQueue.currentSongIndex++;
                 
-                if(this.currentSongIndex >= serverQueue.songs.length)
-                    this.currentSongIndex=0;
+                if(serverQueue.currentSongIndex >= serverQueue.songs.length)
+                    serverQueue.currentSongIndex=0;
                 
-                this.play(guild, serverQueue.songs[this.currentSongIndex]);
+                this.play(guild, serverQueue.songs[serverQueue.currentSongIndex]);
             })
             .on('error', (error) => console.error(error));
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
