@@ -27,9 +27,9 @@ const opts = {
 };
 
 const LoopState = Object.freeze({
-    LoopAll:  Symbol("LoopAll"),
-    LoopOne:  Symbol("LoopOne"),
-    LoopNone: Symbol("LoopNone")
+    LoopAll:  "LoopAll",
+    LoopOne:  "LoopOne",
+    LoopNone: "LoopNone"
 });
 
 class Music {
@@ -238,8 +238,11 @@ class Music {
             loop: LoopState.LoopNone,
             currentSongIndex: 0,
         };
-
         this.queue.set(message.guild.id, queueContruct);
+
+        // ?????
+        const serverQueue = this.queue.get(message.guild.id);
+        serverQueue.loopState = LoopState.LoopNone;
 
        await this.connectBot(message.guild.id, voiceChannel, this.queue.get(message.guild.id)).then(conn => {
             if (conn)
@@ -306,8 +309,6 @@ class Music {
                 highWaterMark: 1
             })
             .on('finish', () => {
-                console.log(serverQueue.loopState);
-
                 if(serverQueue.loopState == LoopState.LoopNone)
                     serverQueue.songs.shift();
                 else if(serverQueue.loopState == LoopState.LoopAll)
