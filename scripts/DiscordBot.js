@@ -83,6 +83,7 @@ module.exports = class DiscordBot {
                 case 'resume':
                     this.music.resume(message, serverQueue);
                     break;
+                case 'c':
                 case `clear`:
                     this.music.clearQueueCommand(message, serverQueue);
                     break;
@@ -90,8 +91,9 @@ module.exports = class DiscordBot {
                 case `queue`:
                     this.music.showQueueCommand(message, serverQueue);
                     break;
+                case 'd':
                 case 'delete':
-                    this.music.deleteSongCommand(messageSplit, serverQueue);
+                    this.music.deleteSongCommand(message, messageSplit, serverQueue);
                     break;
                 case 'l':
                 case 'loop':
@@ -107,9 +109,11 @@ module.exports = class DiscordBot {
                     serverQueue.loopState = Music.LoopState.LoopOff;
                     Utils.shortEmbedReply(message, 'We are not looping anymore.');
                     break;
+                case 'h':
                 case `help`:
                     this.commandList(message);
                     break;
+                case 'b':
                 case 'boczek':
                     Utils.getRandomLine("./data/boczek-epitety.txt").then(sentence => {
                         message.channel.send(messageNoPrefix.split('boczek ').join('') + ' to ' + sentence);

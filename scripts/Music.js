@@ -22,7 +22,7 @@ const ytOptions = {
 };
 
 const opts = {
-    maxResults: 5,
+    maxResults: 10,
     key: process.env.YOUTUBE_KEY,
     regionCode: 'US'
 };
@@ -112,7 +112,7 @@ class Music {
 
             if (i === 0 && !serverQueue)
                 await this.addSong(message, yt_result.link, message.member.voice.channel, serverQueue);
-            else if (!this.checkIfUrlInQueue(yt_result.link)) {
+            else if (!Music.checkIfUrlInQueue(yt_result.link)) {
                 const song = {
                     title: title,
                     url: yt_result.link,
@@ -142,7 +142,7 @@ class Music {
             if (urlIndex === 2)
                 messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
             
-            this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], '')).then(results => {
+            this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], ''), serverQueue).then(results => {
                 console.log('url: ' + results.link);
                 this.addSong(message, results.link, voiceChannel, serverQueue);
             });
@@ -212,7 +212,7 @@ class Music {
             this.createQueue(message, voiceChannel, song);
             serverQueue = this.queue.get(message.guild.id);
             serverQueue.songs.push(song);
-        } else if (!this.checkIfUrlInQueue(song.url, serverQueue)) {
+        } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
             serverQueue.songs.push(song);
 
             if (!this.client.voice.connections.some(conn => conn.channel.id === voiceChannel.id)) {
@@ -252,14 +252,17 @@ class Music {
         });
     }
 
-    async deleteSongCommand(messageSplit, serverQueue) {
-        if (messageSplit.length === 3) {
-            const index = parseInt(messageSplit[2], 10);
+    async deleteSongCommand(message, messageSplit, serverQueue) {
+        if (messageSplit.length === 2) {
+            const index = parseInt(messageSplit[1], 10);
             if (serverQueue && index >= 1 && index - 1 < serverQueue.songs.length) {
+                const song = serverQueue.songs[index-1];
                 if (index - 1 === 0)
                     serverQueue.connection.dispatcher.end();
                 else
                     serverQueue.songs.splice(index - 1, 1);
+
+                return Utils.shortEmbedReply(message, `[${song.full_title}](${song.url}) usunięto z kolejki! \t`);
             }
         }
     }
@@ -274,8 +277,8 @@ class Music {
         if (this.isQueueEmpty(serverQueue))
             return Utils.shortEmbedReply(message, `Nie ma co pomijać Panie!`);
 
-        if (messageSplit.length === 3) {
-            const index = parseInt(messageSplit[2], 10);
+        if (messageSplit.length === 2) {
+            const index = parseInt(messageSplit[1], 10);
             if (serverQueue && index >= 2 && index - 1 < serverQueue.songs.length) {
                 serverQueue.songs.splice(1, index - 2);
                 serverQueue.connection.dispatcher.end();
@@ -358,16 +361,16 @@ class Music {
             this.createQueue(message, voiceChannel).then(() =>{
                 this.play(message.guild, song);
             });
-        } else if (!this.checkIfUrlInQueue(song.url, serverQueue)) {
+        } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
             this.play(message.guild, song);
             serverQueue.songs.unshift(song);
         }
     }
 
-    checkIfUrlInQueue(url, queue) {
-        if (queue !== null) {
-            for (let i = 0; i < queue.songs.length; i++) {
-                if (queue.songs[i].url === url)
+    static checkIfUrlInQueue(url, serverQueue) {;
+        if (serverQueue !== null) {
+            for (let i = 0; i < serverQueue.songs.length; i++) {
+                if (serverQueue.songs[i].url === url)
                     return true;
             }
         }
@@ -387,16 +390,17 @@ class Music {
         return true;
     }
 
-    async youtubeSearchUrl(text) {
+    async youtubeSearchUrl(text, serverQueue) {
         return new Promise((resolve, reject) => {
             search(text, opts, function (err, results) {
                 if (err) reject(err);
 
-               console.log(results);
                 let index = 0;
                 for (let i = 0; i < results.length; i++) {
-                    // console.log(results[i].snippet.title);
                     if (results[i].kind === 'youtube#video') {
+                        if(serverQueue!=undefined && Music.checkIfUrlInQueue(results[i].link, serverQueue))
+                            continue;
+
                         index = i;
                         break;
                     }
@@ -458,7 +462,7 @@ class Music {
             const serverQueue = this.queue.get(message.guild.id);
             if (i === 0 && !serverQueue)
                 await this.addSong(message, songList[i].url, message.member.voice.channel, serverQueue);
-            else if (!this.checkIfUrlInQueue(songList[i].url, serverQueue)) {
+            else if (!Music.checkIfUrlInQueue(songList[i].url, serverQueue)) {
                 const song = {
                     title: songList[i].title,
                     full_title: songList[i].full_title,
@@ -472,15 +476,20 @@ class Music {
     }
 
     getRandomOzjasz() {
-        const jaszczurUrl = 'https://www.youtube.com/watch?v=aZ5mQhDrnwc';
-        const ozjaszEinReichUrl = 'https://www.youtube.com/watch?v=_FU--EfPmJ0';
-        const jaszczur2Url = 'https://www.youtube.com/watch?v=V0hwtnJ5YAo';
-        const jaszczur3Url = 'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj';
-        const major = 'https://www.youtube.com/watch?v=2vQhOH_oBHE&ab_channel=Wkl%C4%99s%C5%82yMajorSuchodolski&fbclid=IwAR07n6SQrbsKlYsgRiZ0wnafsDjMvjlXV02psGwEP8gnbxpdmqE5RX0oXZY';
-        const intermajor = 'https://www.youtube.com/watch?v=QP-N54BPz4Q';
+        const urls = [
+            'https://www.youtube.com/watch?v=aZ5mQhDrnwc',
+            'https://www.youtube.com/watch?v=_FU--EfPmJ0',
+            'https://www.youtube.com/watch?v=V0hwtnJ5YAo',
+            'https://www.youtube.com/watch?v=brgjTUh8eZM&ab_channel=Nigdysi%C4%99niepoddawaj',
+            'https://www.youtube.com/watch?v=2vQhOH_oBHE&ab_channel=Wkl%C4%99s%C5%82yMajorSuchodolski&fbclid=IwAR07n6SQrbsKlYsgRiZ0wnafsDjMvjlXV02psGwEP8gnbxpdmqE5RX0oXZY',
+            'https://www.youtube.com/watch?v=QP-N54BPz4Q'
+        ];
 
-        const urls = [jaszczurUrl, jaszczur2Url, jaszczur3Url, ozjaszEinReichUrl, major, intermajor];
         return urls[Math.floor(Math.random() * urls.length)];
+    }
+
+    static halo(){
+        console.log('witam');
     }
 }
 
