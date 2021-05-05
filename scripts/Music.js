@@ -23,7 +23,8 @@ const ytOptions = {
 
 const opts = {
     maxResults: 5,
-    key: process.env.YOUTUBE_KEY
+    key: process.env.YOUTUBE_KEY,
+    regionCode: 'US'
 };
 
 const LoopState = Object.freeze({
@@ -140,8 +141,8 @@ class Music {
         else {
             if (urlIndex === 2)
                 messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
-
-            this.youtubeSearchUrl(messageNoPrefix.replace('play', '')).then(results => {
+            
+            this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], '')).then(results => {
                 console.log('url: ' + results.link);
                 this.addSong(message, results.link, voiceChannel, serverQueue);
             });
@@ -391,8 +392,10 @@ class Music {
             search(text, opts, function (err, results) {
                 if (err) reject(err);
 
+               console.log(results);
                 let index = 0;
                 for (let i = 0; i < results.length; i++) {
+                    // console.log(results[i].snippet.title);
                     if (results[i].kind === 'youtube#video') {
                         index = i;
                         break;
