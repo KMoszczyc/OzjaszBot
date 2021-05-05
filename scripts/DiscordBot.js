@@ -65,9 +65,9 @@ module.exports = class DiscordBot {
                     this.music.playCommand(message, messageSplit, messageNoPrefix, serverQueue);
                     break;
                 case `playlist`:
-                    if (messageSplit.length === 2 && messageSplit[1].startsWith('https://www.youtube.com/'))
+                    if (messageSplit.length >= 2 && messageSplit[1].startsWith('https://www.youtube.com/'))
                         this.music.youtubePlaylist(message, messageSplit[1]);
-                    else if (messageSplit.length === 2 && messageSplit[1].startsWith('https://open.spotify.com/playlist/'))
+                    else if (messageSplit.length >= 2 && messageSplit[1].startsWith('https://open.spotify.com/playlist/'))
                         this.music.spotifyPlayList(message, messageSplit[1]);
                     break;
                 case 's':

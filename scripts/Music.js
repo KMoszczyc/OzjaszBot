@@ -124,12 +124,12 @@ class Music {
     }
 
     async playCommand(message, messageSplit, messageNoPrefix, serverQueue) {
-        if (messageSplit.length >= 3) {
-            if (messageSplit[2].startsWith('<@!')) {
-                const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[2]));
-                this.playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 3, voiceChannel);
+        if (messageSplit.length >= 2) {
+            if (messageSplit[1].startsWith('<@!')) {
+                const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[1]));
+                this.playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 2, voiceChannel);
             } else {
-                this.playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 2, message.member.voice.channel);
+                this.playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 1, message.member.voice.channel);
             }
         }
     }
@@ -138,8 +138,8 @@ class Music {
         if (messageSplit[urlIndex].startsWith('http'))
             this.addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue);
         else {
-            if (urlIndex === 3)
-                messageNoPrefix = messageNoPrefix.replace(messageSplit[2], '');
+            if (urlIndex === 2)
+                messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
 
             this.youtubeSearchUrl(messageNoPrefix.replace('play', '')).then(results => {
                 console.log('url: ' + results.link);
