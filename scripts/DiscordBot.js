@@ -15,7 +15,7 @@ module.exports = class DiscordBot {
     constructor() {
         this.client = new Discord.Client();
         this.music = new Music.Music(this.client);
-        this.prefix = '!oz';
+        this.prefix = '-';
 
         this.client.login(process.env.TOKEN);
         this.client.on('ready', this.readyDiscord.bind(this));
@@ -25,7 +25,7 @@ module.exports = class DiscordBot {
 
     readyDiscord() {
         console.log('its ready already!');
-        this.client.user.setActivity('!oz help', {
+        this.client.user.setActivity(`${this.prefix}help`, {
             type: 'PLAYING'
         });
         this.music.setupSpotify();
@@ -51,95 +51,101 @@ module.exports = class DiscordBot {
         console.log(message.content);
         const serverQueue = this.music.queue.get(message.guild.id);
         
+        if(message.content.substring(0,3) === '!oz')
+            Utils.shortEmbedReply(message, `!oz is gone, now ${this.prefix} is the new command`);
 
-        const messageSplit = message.content.split(' ');
-        if (messageSplit[0] === this.prefix) {
-            const messageNoPrefix = message.content.split(this.prefix + ' ').join('');
+        if(message.content[0] === this.prefix) {
+            const messageNoPrefix = message.content.substring(this.prefix.length);
+            const messageSplit = messageNoPrefix.split(' ');
 
-            if (messageSplit.length <= 1) {
-                Utils.getRandomLine("./data/ozjasz-wypowiedzi.txt").then(sentence => {
-                    message.channel.send(sentence);
-                });
-            } else {
-                switch (messageSplit[1]) {
-                    case `play`:
-                        this.music.playCommand(message, messageSplit, messageNoPrefix, serverQueue);
-                        break;
-                    case `playlist`:
-                        if (messageSplit.length === 3 && messageSplit[2].startsWith('https://www.youtube.com/'))
-                            this.music.youtubePlaylist(message, messageSplit[2]);
-                        else if (messageSplit.length === 3 && messageSplit[2].startsWith('https://open.spotify.com/playlist/'))
-                            this.music.spotifyPlayList(message, messageSplit[2]);
-                        break;
-                    case `skip`:
-                        this.music.skipCommand(message, serverQueue);
-                        break;
-                    case `skipto`:
-                        this.music.skipToCommand(message, messageSplit, serverQueue);
-                        break;
-                    case 'pause':
-                        this.music.pause(message, serverQueue);
-                        break;
-                    case 'resume':
-                        this.music.resume(message, serverQueue);
-                        break;
-                    case `clear`:
-                        this.music.clearQueueCommand(message, serverQueue);
-                        break;
-                    case `queue`:
-                        this.music.showQueueCommand(message, serverQueue);
-                        break;
-                    case 'delete':
-                        this.music.deleteSongCommand(messageSplit, serverQueue);
-                        break;
-                    case 'loop':
-                        serverQueue.loopState = Music.LoopState.LoopAll;
-                        Utils.shortEmbedReply(message, 'We are looping now!');
-                        break;
-                    case 'loopone':
-                        serverQueue.loopState = Music.LoopState.LoopOne;
-                        Utils.shortEmbedReply(message, 'We are looping current song!');
-                        break;
-                    case 'loopnone':
-                        serverQueue.loopState = Music.LoopState.LoopNone;
-                        Utils.shortEmbedReply(message, 'We are not looping anymore.');
-                        break;
-                    case `help`:
-                        this.commandList(message);
-                        break;
-                    case 'boczek':
-                        Utils.getRandomLine("./data/boczek-epitety.txt").then(sentence => {
-                            message.channel.send(messageNoPrefix.split('boczek ').join('') + ' to ' + sentence);
-                        });
-                        break;
-                    case 'instrukcja':
-                        Utils.getRandomLine("./data/instrukcja-lol.txt").then(sentence => {
-                            message.channel.send(sentence);
-                        });
-                        break;
-                    case 'random':
-                        if (messageSplit.length === 3) {
-                            const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[2]));
-                            this.music.playAtTop(message, voiceChannel, this.music.getRandomOzjasz(), serverQueue);
-                        } else
-                            this.music.playAtTop(message, message.member.voice.channel, this.music.getRandomOzjasz(), serverQueue);
-                        break;
-                    case 'join':
-                        message.member.voice.channel.join();
-                        this.music.createQueue(message, message.member.voice.channel, null);
-                        break;
-                    case 'spotify':
-                        this.music.spotifyPlayList(message);
-                        break;
-                    case 'guess':
-                        this.predictSentiment(message, messageNoPrefix.split('guess').join(''));
-                        break;
-                    case 'lyrics':
-                        this.music.findLyrics(message, serverQueue);
-                        break;
-                    default:
-                        this.commandList(message);
-                }
+            console.log(messageSplit);
+            switch (messageSplit[0]) {
+                case 'p':
+                case `play`:
+                    this.music.playCommand(message, messageSplit, messageNoPrefix, serverQueue);
+                    break;
+                case `playlist`:
+                    if (messageSplit.length === 2 && messageSplit[1].startsWith('https://www.youtube.com/'))
+                        this.music.youtubePlaylist(message, messageSplit[1]);
+                    else if (messageSplit.length === 2 && messageSplit[1].startsWith('https://open.spotify.com/playlist/'))
+                        this.music.spotifyPlayList(message, messageSplit[1]);
+                    break;
+                case 's':
+                case `skip`:
+                    this.music.skipCommand(message, serverQueue);
+                    break;
+                case `skipto`:
+                    this.music.skipToCommand(message, messageSplit, serverQueue);
+                    break;
+                case 'pause':
+                    this.music.pause(message, serverQueue);
+                    break;
+                case 'resume':
+                    this.music.resume(message, serverQueue);
+                    break;
+                case `clear`:
+                    this.music.clearQueueCommand(message, serverQueue);
+                    break;
+                case 'q':
+                case `queue`:
+                    this.music.showQueueCommand(message, serverQueue);
+                    break;
+                case 'delete':
+                    this.music.deleteSongCommand(messageSplit, serverQueue);
+                    break;
+                case 'l':
+                case 'loop':
+                    serverQueue.loopState = Music.LoopState.LoopAll;
+                    Utils.shortEmbedReply(message, 'We are looping now!');
+                    break;
+                case 'loopone':
+                    serverQueue.loopState = Music.LoopState.LoopOne;
+                    Utils.shortEmbedReply(message, 'We are looping current song!');
+                    break;
+                case 'lo':
+                case 'loopoff':
+                    serverQueue.loopState = Music.LoopState.LoopOff;
+                    Utils.shortEmbedReply(message, 'We are not looping anymore.');
+                    break;
+                case `help`:
+                    this.commandList(message);
+                    break;
+                case 'boczek':
+                    Utils.getRandomLine("./data/boczek-epitety.txt").then(sentence => {
+                        message.channel.send(messageNoPrefix.split('boczek ').join('') + ' to ' + sentence);
+                    });
+                    break;
+                case 'instrukcja':
+                    Utils.getRandomLine("./data/instrukcja-lol.txt").then(sentence => {
+                        message.channel.send(sentence);
+                    });
+                    break;
+                case 'random':
+                    if (messageSplit.length === 3) {
+                        const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[2]));
+                        this.music.playAtTop(message, voiceChannel, this.music.getRandomOzjasz(), serverQueue);
+                    } else
+                        this.music.playAtTop(message, message.member.voice.channel, this.music.getRandomOzjasz(), serverQueue);
+                    break;
+                case 'join':
+                    message.member.voice.channel.join();
+                    this.music.createQueue(message, message.member.voice.channel, null);
+                    break;
+                case 'guess':
+                    this.predictSentiment(message, messageNoPrefix.split('guess').join(''));
+                    break;
+                case 'ly':
+                case 'lyrics':
+                    this.music.findLyrics(message, serverQueue);
+                    break;
+                case 'o':
+                case 'ozjasz':
+                    Utils.getRandomLine("./data/ozjasz-wypowiedzi.txt").then(sentence => {
+                        message.channel.send(sentence);
+                    });
+                    break;
+                default:
+                    this.commandList(message);
             }
         }
     }
@@ -168,9 +174,9 @@ module.exports = class DiscordBot {
     async commandList(message) {
         const reply = new Discord.MessageEmbed()
             .setAuthor('Oto komendy.. \n', this.client.user.avatarURL())
-            .addField('Music 🎵', '!oz play [tytuł lub url] \n  !oz play [@nick kogoś] [tytuł lub url] \n !oz playlist [url] \n !oz skip  \n !oz skipto [index] \n !oz pause \n !oz resume  \n !oz clear  \n !oz queue  \n !oz delete [index] \n !oz lyrics \n !oz loop \n !oz loopone \n !oz loopnone' , true)
+            .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playlist [url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo)` , true)
             .setColor(0xa62019)
-            .addField('Inne 🥓', '!oz  \n !oz boczek [coś] 🥓 \n !oz guess [coś] \n !oz instrukcja \n !oz random \n !oz random [@nick] \n !oz help \n', true);
+            .addField('Inne 🥓', `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}help \n`, true);
 
         return message.channel.send(reply);
     }
