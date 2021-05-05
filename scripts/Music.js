@@ -29,7 +29,7 @@ const opts = {
 const LoopState = Object.freeze({
     LoopAll:  "LoopAll",
     LoopOne:  "LoopOne",
-    LoopNone: "LoopNone"
+    LoopOff: "LoopOff"
 });
 
 class Music {
@@ -235,14 +235,14 @@ class Music {
             songs: [],
             volume: 5,
             playing: true,
-            loop: LoopState.LoopNone,
+            loop: LoopState.LoopOff,
             currentSongIndex: 0,
         };
         this.queue.set(message.guild.id, queueContruct);
 
         // ?????
         const serverQueue = this.queue.get(message.guild.id);
-        serverQueue.loopState = LoopState.LoopNone;
+        serverQueue.loopState = LoopState.LoopOff;
 
        await this.connectBot(message.guild.id, voiceChannel, this.queue.get(message.guild.id)).then(conn => {
             if (conn)
@@ -309,7 +309,7 @@ class Music {
                 highWaterMark: 1
             })
             .on('finish', () => {
-                if(serverQueue.loopState == LoopState.LoopNone)
+                if(serverQueue.loopState == LoopState.LoopOff)
                     serverQueue.songs.shift();
                 else if(serverQueue.loopState == LoopState.LoopAll)
                     serverQueue.currentSongIndex++;
