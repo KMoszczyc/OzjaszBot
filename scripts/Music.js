@@ -99,7 +99,6 @@ class Music {
             Utils.shortEmbedReply(message, 'Panie co pan, kolejka pusta przecie!');
     }
 
-    
     async spotifyPlayList(message, url) {
         const playlist_id = url.split('playlist/')[1];
         const results = await spotifyApi.getPlaylist(playlist_id);
@@ -112,7 +111,7 @@ class Music {
 
             if (i === 0 && !serverQueue)
                 await this.addSong(message, yt_result.link, message.member.voice.channel, serverQueue);
-            else if (!Music.checkIfUrlInQueue(yt_result.link)) {
+            else if (!Music.checkIfUrlInQueue(yt_result.link, serverQueue)) {
                 const song = {
                     title: title,
                     url: yt_result.link,
@@ -137,7 +136,12 @@ class Music {
 
     async playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel) {
         if (messageSplit[urlIndex].startsWith('http'))
-            this.addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue);
+            if(messageSplit[urlIndex].includes('&list='))
+                this.youtubePlaylist(message, messageSplit[urlIndex]);
+            else if(messageSplit[urlIndex].startsWith('https://open.spotify.com/playlist/'))
+                this.spotifyPlayList(message, messageSplit[urlIndex]);
+            else
+                this.addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue);
         else {
             if (urlIndex === 2)
                 messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
@@ -145,6 +149,31 @@ class Music {
             this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], ''), serverQueue).then(results => {
                 console.log('url: ' + results.link);
                 this.addSong(message, results.link, voiceChannel, serverQueue);
+            });
+        }
+    }
+
+    async playAtTopCommand(message, messageSplit, messageNoPrefix, serverQueue) {
+        if (messageSplit.length >= 2) {
+            if (messageSplit[1].startsWith('<@!')) {
+                const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[1]));
+                this.playAtTopCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 2, voiceChannel);
+            } else {
+                this.playAtTopCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, 1, message.member.voice.channel);
+            }
+        }
+    }
+
+    async playAtTopCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel){
+        if (messageSplit[urlIndex].startsWith('http'))
+            this.playAtTop(message, voiceChannel, messageSplit[urlIndex], serverQueue);
+        else {
+            if (urlIndex === 2)
+                messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
+            
+            this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], ''), serverQueue).then(results => {
+                console.log('url: ' + results.link);
+                this.playAtTop(message, voiceChannel, results.link, serverQueue);
             });
         }
     }
@@ -356,10 +385,12 @@ class Music {
             url: songInfo.videoDetails.video_url,
             duration: Utils.secondsToTime(songInfo.videoDetails.lengthSeconds)
         };
-        console.log(song);
+
         if (!serverQueue) {
             this.createQueue(message, voiceChannel).then(() =>{
                 this.play(message.guild, song);
+                serverQueue = this.queue.get(message.guild.id);
+                serverQueue.songs.push(song);
             });
         } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
             this.play(message.guild, song);
@@ -367,7 +398,7 @@ class Music {
         }
     }
 
-    static checkIfUrlInQueue(url, serverQueue) {;
+    static checkIfUrlInQueue(url, serverQueue) {
         if (serverQueue !== null) {
             for (let i = 0; i < serverQueue.songs.length; i++) {
                 if (serverQueue.songs[i].url === url)
@@ -486,10 +517,6 @@ class Music {
         ];
 
         return urls[Math.floor(Math.random() * urls.length)];
-    }
-
-    static halo(){
-        console.log('witam');
     }
 }
 
