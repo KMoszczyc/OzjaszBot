@@ -135,13 +135,14 @@ class Music {
     }
 
     async playCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel) {
-        if (messageSplit[urlIndex].startsWith('http'))
+        if (messageSplit[urlIndex].startsWith('http')){
             if(messageSplit[urlIndex].includes('&list='))
                 this.youtubePlaylist(message, messageSplit[urlIndex]);
             else if(messageSplit[urlIndex].startsWith('https://open.spotify.com/playlist/'))
                 this.spotifyPlayList(message, messageSplit[urlIndex]);
             else
                 this.addSong(message, messageSplit[urlIndex], voiceChannel, serverQueue);
+        }
         else {
             if (urlIndex === 2)
                 messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
@@ -445,7 +446,18 @@ class Music {
     async youtubePlaylist(message, url) {
         const startIndex = url.indexOf('list=');
         const endIndex = url.indexOf('&index');
-        const playListId = url.substring(startIndex + 5, endIndex === -1 ? url.length : endIndex);
+        const endIndexV2 = url.indexOf('&start_radio');
+        let finalEndIndex;
+
+        if(endIndex==-1 && endIndexV2==-1)
+            finalEndIndex = url.length;
+        else if(endIndex!=-1)
+            finalEndIndex = endIndex;
+        else if(endIndexV2!=-1)
+            finalEndIndex = endIndexV2;
+
+
+        const playListId = url.substring(startIndex + 5, finalEndIndex);
 
         const results = await axios.get(`https://www.googleapis.com/youtube/v3/playlistItems`, {
             params: {
