@@ -188,7 +188,7 @@ module.exports = class DiscordBot {
     async commandList(message) {
         const reply = new Discord.MessageEmbed()
             .setAuthor('Oto komendy.. \n', this.client.user.avatarURL())
-            .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playtop (${this.prefix}pt) [tytuł lub url] \n  ${this.prefix}playtop [@nick kogoś] [tytuł lub url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo)` , true)
+            .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playtop (${this.prefix}pt) [tytuł lub url] \n  ${this.prefix}playtop [@nick kogoś] [tytuł lub url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo) \n ${this.prefix}brzechwa ` , true)
             .setColor(0xa62019)
             .addField('Inne 🥓', `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}help \n`, true);
 
