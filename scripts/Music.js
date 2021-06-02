@@ -183,7 +183,7 @@ class Music {
         if (this.isQueueEmpty(serverQueue)) {
             const reply = new Discord.MessageEmbed()
                 .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', this.client.user.avatarURL())
-                .setDescription('... \n ...\n \n Pusty portfel, pusta kolejka..')
+                .setDescription('... \n ...\n \n Pusta kolejka..')
                 .setColor(0xa62019);
             return message.channel.send(reply);
         }
