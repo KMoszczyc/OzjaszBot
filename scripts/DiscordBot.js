@@ -10,6 +10,7 @@ const Utils = require('./Utils');
 const Music = require('./Music');
 
 console.log('beep beep! ');
+const brzechwa_url = 'https://www.youtube.com/watch?v=32ixE73t_uA&t=1431s';
 
 module.exports = class DiscordBot {
     constructor() {
@@ -41,7 +42,7 @@ module.exports = class DiscordBot {
             if (serverQueue && serverQueue.songs !== [] && serverQueue.connection !== null) {
                 this.music.connectBot(newMember.guild.id, newMember.channel, serverQueue).then(conn => {
                     if (conn)
-                        this.play(newMember.guild, serverQueue.songs[0]);
+                        this.music.play(newMember.guild, serverQueue.songs[0]);
                 });
             }
         }
@@ -132,6 +133,13 @@ module.exports = class DiscordBot {
                         this.music.playAtTop(message, voiceChannel, this.music.getRandomOzjasz(), serverQueue);
                     } else
                         this.music.playAtTop(message, message.member.voice.channel, this.music.getRandomOzjasz(), serverQueue);
+                    break;
+                case 'brzechwa':
+                    if (messageSplit.length === 3) {
+                        const voiceChannel = Utils.getUserVoiceChannel(message, Utils.getUserId(messageSplit[2]));
+                        this.music.playAtTop(message, voiceChannel, brzechwa_url, serverQueue, 23*60 + 50);
+                    } else
+                        this.music.playAtTop(message, message.member.voice.channel, brzechwa_url, serverQueue, 23*60 + 50);
                     break;
                 case 'join':
                     message.member.voice.channel.join();

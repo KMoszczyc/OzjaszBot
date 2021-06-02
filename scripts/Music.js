@@ -325,7 +325,7 @@ class Music {
         serverQueue.currentSongIndex=0;
     }
 
-    async play(guild, song) {
+    async play(guild, song, skip_seconds=0) {
         const serverQueue = this.queue.get(guild.id);
         if (!song) {
             serverQueue.voiceChannel.leave();
@@ -340,7 +340,8 @@ class Music {
                 highWaterMark: 1 << 25,
                 requestOptions: ytOptions
             }), {
-                highWaterMark: 1
+                highWaterMark: 1,
+                seek: skip_seconds
             })
             .on('finish', () => {
                 if(serverQueue.loopState == LoopState.LoopOff)
@@ -374,7 +375,7 @@ class Music {
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     }
 
-    async playAtTop(message, voiceChannel, url, serverQueue) {
+    async playAtTop(message, voiceChannel, url, serverQueue, skip_seconds=0) {
         Utils.checkPermissions(message, voiceChannel);
 
         const songInfo = await ytdl.getInfo(url, {
@@ -389,12 +390,12 @@ class Music {
 
         if (!serverQueue) {
             this.createQueue(message, voiceChannel).then(() =>{
-                this.play(message.guild, song);
+                this.play(message.guild, song, skip_seconds);
                 serverQueue = this.queue.get(message.guild.id);
                 serverQueue.songs.push(song);
             });
         } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
-            this.play(message.guild, song);
+            this.play(message.guild, song, skip_seconds);
             serverQueue.songs.unshift(song);
         }
     }
