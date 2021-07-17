@@ -45,10 +45,8 @@ module.exports = class Utils {
         return timeStr;
     }
 
-    static async shortEmbedReply(message, reply) {
-        message.channel.send(
-            new Discord.MessageEmbed().setDescription(reply).setColor(0xa62019)
-        );
+    static async shortEmbedReply(textChannel, reply) {
+        textChannel.send(new Discord.MessageEmbed().setDescription(reply).setColor(0xa62019));
     }
 
     static async readFile(path) {
@@ -115,5 +113,27 @@ module.exports = class Utils {
             const j = Math.floor(Math.random() * (i + 1));
             [array[i], array[j]] = [array[j], array[i]];
         }
+    }
+
+    static parseHour(hour){
+        let hourInt = parseInt(hour);
+        if(isNaN(hourInt) || hourInt<0 || hourInt>23)
+            throw new Error('Wrong hour!')
+        return hourInt
+    }
+
+    static parseMinute(minute){
+        let minuteInt = parseInt(minute);
+        if(isNaN(minuteInt) || minuteInt<0 || minuteInt>60)
+            throw new Error('Wrong minute!')
+        return minuteInt
+    }
+
+    static beautyNum(num){
+        return num.toString().padStart(2, '0') // "09"
+    }
+
+    static beautyTime(hour, minute){
+        return `${hour}:${Utils.beautyNum(minute)}`
     }
 };

@@ -47,7 +47,7 @@ class Music {
 
     resume(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message, `Nie ma co wznawiać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `Nie ma co wznawiać Panie!`);
         else {
             console.log('resume');
             serverQueue.connection.dispatcher.resume();
@@ -56,7 +56,7 @@ class Music {
 
     pause(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message, `Nie ma co wstrzymywać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `Nie ma co wstrzymywać Panie!`);
         else {
             console.log('pause');
             serverQueue.connection.dispatcher.pause();
@@ -96,7 +96,7 @@ class Music {
             });
         } 
         else
-            Utils.shortEmbedReply(message, 'Panie co pan, kolejka pusta przecie!');
+            Utils.shortEmbedReply(message.channel, 'Panie co pan, kolejka pusta przecie!');
     }
 
     async spotifyPlayList(message, url) {
@@ -167,14 +167,14 @@ class Music {
 
     async playAtTopCommandHelper(message, messageSplit, messageNoPrefix, serverQueue, urlIndex, voiceChannel){
         if (messageSplit[urlIndex].startsWith('http'))
-            this.playAtTop(message, voiceChannel, messageSplit[urlIndex], serverQueue);
+            this.playAtTop(message.guild, message.channel, voiceChannel, messageSplit[urlIndex], serverQueue);
         else {
             if (urlIndex === 2)
                 messageNoPrefix = messageNoPrefix.replace(messageSplit[1], '');
             
             this.youtubeSearchUrl(messageNoPrefix.replace(messageSplit[0], ''), serverQueue).then(results => {
                 console.log('url: ' + results.link);
-                this.playAtTop(message, voiceChannel, results.link, serverQueue);
+                this.playAtTop(message.guild, message.channel, voiceChannel, results.link, serverQueue);
             });
         }
     }
@@ -239,7 +239,7 @@ class Music {
         };
 
         if (!serverQueue) {
-            this.createQueue(message, voiceChannel, song);
+            this.createQueue(message.guild, voiceChannel, message.channel);
             serverQueue = this.queue.get(message.guild.id);
             serverQueue.songs.push(song);
         } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
@@ -258,9 +258,9 @@ class Music {
         }
     }
 
-    async createQueue(message, voiceChannel) {
+    async createQueue(guild, voiceChannel, textChannel=null) {
         const queueContruct = {
-            textChannel: message.channel,
+            textChannel: textChannel,
             voiceChannel: voiceChannel,
             connection: null,
             songs: [],
@@ -269,15 +269,15 @@ class Music {
             loop: LoopState.LoopOff,
             currentSongIndex: 0,
         };
-        this.queue.set(message.guild.id, queueContruct);
+        this.queue.set(guild.id, queueContruct);
 
         // ?????
-        const serverQueue = this.queue.get(message.guild.id);
+        const serverQueue = this.queue.get(guild.id);
         serverQueue.loopState = LoopState.LoopOff;
 
-       await this.connectBot(message.guild.id, voiceChannel, this.queue.get(message.guild.id)).then(conn => {
+       await this.connectBot(guild.id, voiceChannel, this.queue.get(guild.id)).then(conn => {
             if (conn)
-                this.playMp3(message.guild, 'data/ozjasz.mp3');
+                this.playMp3(guild, 'data/ozjasz.mp3');
             // play(message.guild, queue.get(message.guild.id).songs[0])
         });
     }
@@ -292,20 +292,20 @@ class Music {
                 else
                     serverQueue.songs.splice(index - 1, 1);
 
-                return Utils.shortEmbedReply(message, `[${song.full_title}](${song.url}) usunięto z kolejki! \t`);
+                return Utils.shortEmbedReply(message.channel, `[${song.full_title}](${song.url}) usunięto z kolejki! \t`);
             }
         }
     }
     
     async skipCommand(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message, `Nie ma co pomijać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `Nie ma co pomijać Panie!`);
         serverQueue.connection.dispatcher.end();
     }
 
     async skipToCommand(message, messageSplit, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message, `Nie ma co pomijać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `Nie ma co pomijać Panie!`);
 
         if (messageSplit.length === 2) {
             const index = parseInt(messageSplit[1], 10);
@@ -318,7 +318,7 @@ class Music {
 
     async clearQueueCommand(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message, `Nie ma co czyścić Panie!`);
+            return Utils.shortEmbedReply(message.channel, `Nie ma co czyścić Panie!`);
 
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
@@ -360,7 +360,7 @@ class Music {
         const reply = new Discord.MessageEmbed()
             .setDescription(`Teraz gramy: [${song.full_title}](${song.url})! \t`)
             .setColor(0xa62019);
-
+        
         serverQueue.textChannel.send(reply);
     }
 
@@ -375,8 +375,8 @@ class Music {
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     }
 
-    async playAtTop(message, voiceChannel, url, serverQueue, skip_seconds=0) {
-        Utils.checkPermissions(message, voiceChannel);
+    async playAtTop(guild, textChannel, voiceChannel, url, serverQueue=null, skip_seconds=0) {
+        // Utils.checkPermissions(message, voiceChannel);
 
         const songInfo = await ytdl.getInfo(url, {
             requestOptions: ytOptions
@@ -389,13 +389,13 @@ class Music {
         };
 
         if (!serverQueue) {
-            this.createQueue(message, voiceChannel).then(() =>{
-                this.play(message.guild, song, skip_seconds);
-                serverQueue = this.queue.get(message.guild.id);
+            this.createQueue(guild, voiceChannel, textChannel).then(() =>{
+                this.play(guild, song, skip_seconds);
+                serverQueue = this.queue.get(guild.id);
                 serverQueue.songs.push(song);
             });
         } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
-            this.play(message.guild, song, skip_seconds);
+            this.play(guild, song, skip_seconds);
             serverQueue.songs.unshift(song);
         }
     }
@@ -471,7 +471,7 @@ class Music {
         
         const serverQueue = this.queue.get(message.guild.id);
         if (!serverQueue) 
-            this.createQueue(message, message.member.voice.channel, null);
+            this.createQueue(message.guild, message.member.voice.channel, message.channel);
 
         console.log('songs count: ', results.data.items.length);
         const songList = [];
