@@ -39,50 +39,6 @@ module.exports = class DiscordBot {
         this.scheduleSongOnAllServers(barka_url, 'papaj', 21, 37);
     }
 
-    scheduleSongOnAllServers(url, jobName, hour, minute){
-        this.client.guilds.cache.forEach(server => {
-            console.log(`${server.name} (id:${server.id})`);  
-            const infoMessage = `Jest ${Utils.beautyTime(hour, minute)} gramy ${jobName}`
-            this.scheduleFunctionToRunPeriodically(() =>  this.playSongAndSendMessage(server, url, infoMessage), server.id, jobName, hour, minute);
-        });
-    }
-
-    playSongAndSendMessage(server, url, message){
-        let textChannel = this.sendMessageOnRandomChannel(server, message);
-        console.log(textChannel);
-        this.playSongOnMostPopularChannel(server, textChannel, url)
-    }
-
-    playSongOnMostPopularChannel(server, textChannel, url){
-        const voiceChannels = server.channels.cache.filter(c => c.type == 'voice');
-
-        let maxSize=0
-        let maxVoiceChannel=null
-        voiceChannels.forEach(channel => {
-            if(channel.id != server.afkChannelID && channel.members.size>maxSize){
-                maxSize = channel.members.size;
-                maxVoiceChannel = channel;
-            }
-        });
-
-        if(maxSize>0){
-            console.log(`${maxVoiceChannel.name} ${maxVoiceChannel.members.size}`);
-            this.music.playAtTop(server, textChannel, maxVoiceChannel, url, null, 5);
-        }
-    }
-
-    sendMessageOnRandomChannel(server, message){
-        const textChannels = server.channels.cache.filter(c => c.type == 'text');
-        for (const [key, channel] of textChannels.entries()) {
-            let permissions = channel.permissionsFor(server.me)
-            if(permissions.has("SEND_MESSAGES") && permissions.has("VIEW_CHANNEL")){
-                // console.log(textChannels[i])
-                Utils.shortEmbedReply(channel, message);
-                return channel;
-            }
-        }
-    }
-
     async voiceStateUpdate(oldMember, newMember) {
         const oldVoice = oldMember.channelID;
         const newVoice = newMember.channelID;
@@ -218,6 +174,9 @@ module.exports = class DiscordBot {
                 case 'schedules':
                     this.showSchedules(message);
                     break;
+                case 'tusk':
+                    this.music.playAtTop(message.guild, message.channel, message.member.voice.channel, this.music.randomTusk(), serverQueue);
+                    break;
                 default:
                     this.commandList(message);
             }
@@ -250,9 +209,53 @@ module.exports = class DiscordBot {
             .setAuthor('Oto komendy.. \n', this.client.user.avatarURL())
             .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playtop (${this.prefix}pt) [tytuł lub url] \n  ${this.prefix}playtop [@nick kogoś] [tytuł lub url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo) \n ${this.prefix}brzechwa \n ${this.prefix}schedule [nazwa godzina minuta url] \n ${this.prefix}delete_schedule [nazwa] \n ${this.prefix}schedules` , true)
             .setColor(0xa62019)
-            .addField('Inne 🥓', `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}help \n`, true);
+            .addField('Inne 🥓', `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}tusk \n ${this.prefix}help \n`, true);
 
         return message.channel.send(reply);
+    }
+
+    scheduleSongOnAllServers(url, jobName, hour, minute){
+        this.client.guilds.cache.forEach(server => {
+            console.log(`${server.name} (id:${server.id})`);  
+            const infoMessage = `Jest ${Utils.beautyTime(hour, minute)} gramy ${jobName}`
+            this.scheduleFunctionToRunPeriodically(() =>  this.playSongAndSendMessage(server, url, infoMessage), server.id, jobName, hour, minute);
+        });
+    }
+
+    playSongAndSendMessage(server, url, message){
+        let textChannel = this.sendMessageOnRandomChannel(server, message);
+        console.log(textChannel);
+        this.playSongOnMostPopularChannel(server, textChannel, url)
+    }
+
+    playSongOnMostPopularChannel(server, textChannel, url){
+        const voiceChannels = server.channels.cache.filter(c => c.type == 'voice');
+
+        let maxSize=0
+        let maxVoiceChannel=null
+        voiceChannels.forEach(channel => {
+            if(channel.id != server.afkChannelID && channel.members.size>maxSize){
+                maxSize = channel.members.size;
+                maxVoiceChannel = channel;
+            }
+        });
+
+        if(maxSize>0){
+            console.log(`${maxVoiceChannel.name} ${maxVoiceChannel.members.size}`);
+            this.music.playAtTop(server, textChannel, maxVoiceChannel, url, null, 5);
+        }
+    }
+
+    sendMessageOnRandomChannel(server, message){
+        const textChannels = server.channels.cache.filter(c => c.type == 'text');
+        for (const [key, channel] of textChannels.entries()) {
+            let permissions = channel.permissionsFor(server.me)
+            if(permissions.has("SEND_MESSAGES") && permissions.has("VIEW_CHANNEL")){
+                // console.log(textChannels[i])
+                Utils.shortEmbedReply(channel, message);
+                return channel;
+            }
+        }
     }
 
     async addScheduleCommand(message){
@@ -272,14 +275,12 @@ module.exports = class DiscordBot {
     scheduleFunctionToRunPeriodically(fun, guildID, jobName, h, min){
         const job = schedule.scheduleJob({hour: h, minute: min}, () => {
             fun();
-            console.log(`Job runs every day at ${h}:${min}`);
         });
 
         if(!this.scheduledJobs.has(guildID))
             this.createScheduledJobs(guildID);
 
         this.scheduledJobs.get(guildID).set(jobName, {job:job, hour:h, minute:min});
-        console.log(this.scheduledJobs);
         return job
     }
 
@@ -297,7 +298,6 @@ module.exports = class DiscordBot {
     }
 
     showSchedules(message){
-        // this.scheduledJobs.get(guildID).entries().sort((a, b) => a[1].hour - b[1].hour + a[1].minute - b[1].minute)));
         const schedules = Array.from(this.scheduledJobs.get(message.guild.id)).sort((a, b) => {
             return a[1].hour - b[1].hour + a[1].minute - b[1].minute
         });

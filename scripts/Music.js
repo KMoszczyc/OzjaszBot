@@ -531,6 +531,14 @@ class Music {
 
         return urls[Math.floor(Math.random() * urls.length)];
     }
+
+    randomTusk(){
+        const urls = [
+            'https://www.youtube.com/watch?v=AwICmvGya64',
+            'https://www.youtube.com/watch?v=bPWuQ_-Uw6Y'
+        ]
+        return urls[Math.floor(Math.random() * urls.length)];
+    }
 }
 
 module.exports.Music = Music;
