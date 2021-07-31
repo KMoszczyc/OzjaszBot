@@ -37,6 +37,7 @@ class Music {
     constructor(client){
         this.queue = new Map();
         this.client = client;
+        this.timeoutTime = 120 * 1000   // 2 minutes
     }
 
     setupSpotify(){
@@ -268,6 +269,7 @@ class Music {
             playing: true,
             loop: LoopState.LoopOff,
             currentSongIndex: 0,
+            leaveTimer: null 
         };
         this.queue.set(guild.id, queueContruct);
 
@@ -328,9 +330,17 @@ class Music {
     async play(guild, song, skip_seconds=0) {
         const serverQueue = this.queue.get(guild.id);
         if (!song) {
-            serverQueue.voiceChannel.leave();
-            this.queue.delete(guild.id);
+            serverQueue.leaveTimer = setTimeout(() => {
+                this.leaveWithTimeout(guild.id);
+              }, this.timeoutTime); 
             return;
+        }
+
+        // clear timer before set
+        try {
+            clearTimeout(serverQueue.leaveTimer);
+        } catch(e) {
+            // there's no leaveTimer
         }
 
         const dispatcher = serverQueue.connection
@@ -538,6 +548,15 @@ class Music {
             'https://www.youtube.com/watch?v=bPWuQ_-Uw6Y'
         ]
         return urls[Math.floor(Math.random() * urls.length)];
+    }
+
+    leaveWithTimeout(guildID) {
+        const serverQueue = this.queue.get(guildID);
+        if(serverQueue) {
+            Utils.shortEmbedReply(serverQueue.textChannel, `2 minutes of inactivity. Tschüss, auf wiedersehen!`)
+            serverQueue.voiceChannel.leave();
+            this.queue.delete(guildID);
+        }
     }
 }
 
