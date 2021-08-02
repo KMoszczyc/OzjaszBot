@@ -38,10 +38,12 @@ module.exports = class Utils {
 
     static secondsToTime(seconds) {
         let timeStr = new Date(seconds * 1000).toISOString().substr(11, 8);
+        if (seconds < 3600) 
+            timeStr = timeStr.substring(3, timeStr.length);
 
-        if (seconds < 3600) timeStr = timeStr.substring(3, timeStr.length);
+        if (seconds < 600) 
+            timeStr = timeStr.substring(1, timeStr.length);
 
-        if (seconds < 600) timeStr = timeStr.substring(1, timeStr.length);
         return timeStr;
     }
 
