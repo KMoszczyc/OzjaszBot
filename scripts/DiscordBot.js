@@ -34,9 +34,6 @@ module.exports = class DiscordBot {
             type: 'PLAYING'
         });
         this.music.setupSpotify();
-        
-        const barka_url = 'https://www.youtube.com/watch?v=1dOt_VcbgyA'
-        // this.scheduleSongOnAllServers(barka_url, 'papaj', 21, 37);
     }
 
     async voiceStateUpdate(oldMember, newMember) {
@@ -207,7 +204,7 @@ module.exports = class DiscordBot {
     async commandList(message) {
         const reply = new Discord.MessageEmbed()
             .setAuthor('Oto komendy.. \n', this.client.user.avatarURL())
-            .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playtop (${this.prefix}pt) [tytuł lub url] \n  ${this.prefix}playtop [@nick kogoś] [tytuł lub url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo) \n ${this.prefix}brzechwa \n ${this.prefix}schedule [nazwa godzina minuta url] \n ${this.prefix}delete_schedule [nazwa] \n ${this.prefix}schedules` , true)
+            .addField('Music 🎵', `${this.prefix}play (${this.prefix}p) [tytuł lub url] \n  ${this.prefix}play [@nick kogoś] [tytuł lub url] \n ${this.prefix}playtop (${this.prefix}pt) [tytuł lub url] \n  ${this.prefix}playtop [@nick kogoś] [tytuł lub url] \n ${this.prefix}skip (${this.prefix}s)  \n ${this.prefix}skipto [index] \n ${this.prefix}pause \n ${this.prefix}resume  \n ${this.prefix}clear  \n ${this.prefix}queue (${this.prefix}q) \n ${this.prefix}delete [index] \n ${this.prefix}lyrics \n ${this.prefix}loop (${this.prefix}l) \n ${this.prefix}loopone \n ${this.prefix}loopoff (${this.prefix}lo) \n ${this.prefix}brzechwa \n ${this.prefix}schedule [nazwa godzina minuta url wiadomość] \n ${this.prefix}delete_schedule [nazwa] \n ${this.prefix}schedules` , true)
             .setColor(0xa62019)
             .addField('Inne 🥓', `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}tusk \n ${this.prefix}help \n`, true);
 
@@ -261,10 +258,10 @@ module.exports = class DiscordBot {
     async addScheduleCommand(message){
         let messageSplit = message.content.split(' ');
         messageSplit.shift();
-        if(messageSplit.length==4){
-            const [jobName, hour, minute, url] = messageSplit;
-            const infoMessage = `Jest ${Utils.beautyTime(hour, minute)} gramy ${jobName}`
-            this.scheduleFunctionToRunPeriodically(() =>  this.playSongAndSendMessage(message.guild, url, infoMessage), message.guild.id, jobName, Utils.parseHour(hour), Utils.parseMinute(minute));
+        if(messageSplit.length>=4){
+            const [jobName, hour, minute, url, ...scheduledMessage] = messageSplit;
+            console.log(scheduledMessage)
+            this.scheduleFunctionToRunPeriodically(() =>  this.playSongAndSendMessage(message.guild, url, scheduledMessage.join(' ')), message.guild.id, jobName, Utils.parseHour(hour), Utils.parseMinute(minute));
         }
     }
 
@@ -298,6 +295,11 @@ module.exports = class DiscordBot {
     }
 
     showSchedules(message){
+        if(!this.scheduledJobs.has(message.guild.id)){
+            Utils.shortEmbedReply(message.channel, 'There is not any song scheduled!');
+            return
+        }
+
         const schedules = Array.from(this.scheduledJobs.get(message.guild.id)).sort((a, b) => {
             return a[1].hour - b[1].hour + a[1].minute - b[1].minute
         });
@@ -308,7 +310,6 @@ module.exports = class DiscordBot {
         reply+=`Cykliczny rozkład muzyczny: \n\n`
         let i=1;
         for(const[jobID, job] of schedules){
-            // reply+=`\t- ${jobID} ${job.hour}:${job.minute}\n`
             reply+= `${i}.\t${jobID} - ${Utils.beautyTime(job.hour, job.minute)} \t\n`;
             i++;
         }
