@@ -36,7 +36,7 @@ module.exports = class DiscordBot {
         this.music.setupSpotify();
         
         const barka_url = 'https://www.youtube.com/watch?v=1dOt_VcbgyA'
-        this.scheduleSongOnAllServers(barka_url, 'papaj', 21, 37);
+        // this.scheduleSongOnAllServers(barka_url, 'papaj', 21, 37);
     }
 
     async voiceStateUpdate(oldMember, newMember) {
