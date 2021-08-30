@@ -33,6 +33,8 @@ const LoopState = Object.freeze({
     LoopOff: "LoopOff"
 });
 
+const max_spotify_songs_num = 30;
+
 class Music {
     constructor(client){
         this.queue = new Map();
@@ -103,7 +105,7 @@ class Music {
     async spotifyPlayList(message, url) {
         const playlist_id = url.split('playlist/')[1];
         const results = await spotifyApi.getPlaylist(playlist_id);
-        const resultsLength = Math.min(5, results.body.tracks.items.length);
+        const resultsLength = Math.min(max_spotify_songs_num, results.body.tracks.items.length);
 
         for (let i = 0; i < resultsLength; i++) {
             const serverQueue = this.queue.get(message.guild.id);
@@ -115,6 +117,7 @@ class Music {
             else if (!Music.checkIfUrlInQueue(yt_result.link, serverQueue)) {
                 const song = {
                     title: title,
+                    full_title: title,
                     url: yt_result.link,
                     duration: Utils.secondsToTime(results.body.tracks.items[i].track.duration_ms / 1000)
                 };
