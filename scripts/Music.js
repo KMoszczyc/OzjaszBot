@@ -55,7 +55,7 @@ class Music {
 
     resume(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message.channel, `Nie ma co wznawiać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `There is nothing to resume!`);
         else {
             console.log('resume');
             serverQueue.connection.dispatcher.resume();
@@ -64,7 +64,7 @@ class Music {
 
     pause(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message.channel, `Nie ma co wstrzymywać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `There is nothing to pause!`);
         else {
             console.log('pause');
             serverQueue.connection.dispatcher.pause();
@@ -104,7 +104,7 @@ class Music {
             });
         } 
         else
-            Utils.shortEmbedReply(message.channel, 'Panie co pan, kolejka pusta przecie!');
+            Utils.shortEmbedReply(message.channel, 'Hey man, the queue is empty! 🐒');
     }
 
     async spotifyPlayList(message, url) {
@@ -189,16 +189,16 @@ class Music {
     }
 
     async showQueueCommand(message, serverQueue) {
-        if (this.isQueueEmpty(serverQueue)) {
-            const reply = new Discord.MessageEmbed()
-                .setAuthor('A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n', this.client.user.avatarURL())
-                .setDescription('... \n ...\n \n Pusta kolejka..')
+        if (this.isQueueEmpty(serverQueue)) {  
+            const reply = new Discord.MessageEmbed()  
+                .setAuthor('Thats the queue..  🎵 🐒 🌴 🍌 \n', this.client.user.avatarURL())
+                .setDescription('... \n ...\n \n .. But the queue is empty 🤷‍♀️')
                 .setColor(0xa62019);
             return message.channel.send(reply);
         }
 
         let songList = `\`\`\`nim\n`;
-        songList += `A na drzewach zamiast liści.. 🌴 🌲 🌳  🎵 🎵 🎵 \n\n`;
+        songList += `Thats the queue..  🎵 🐒 🌴 🍌  \n\n`;
 
         const length = Math.min(10, serverQueue.songs.length);
         let maxLength = 0;
@@ -255,12 +255,11 @@ class Music {
             serverQueue.songs.push(song);
 
             if (!this.client.voice.connections.some(conn => conn.channel.id === voiceChannel.id)) {
-                console.log('hmm not connected');
                 this.connectBot(message.guild.id, voiceChannel, serverQueue);
             }
 
             const reply = new Discord.MessageEmbed()
-                .setDescription(`[${song.full_title}](${song.url}) dodano do kolejki! \t`)
+                .setDescription(`[${song.full_title}](${song.url}) added to queue! 👀 \t`)
                 .setColor(0xa62019);
 
             return message.channel.send(reply);
@@ -302,20 +301,20 @@ class Music {
                 else
                     serverQueue.songs.splice(index - 1, 1);
 
-                return Utils.shortEmbedReply(message.channel, `[${song.full_title}](${song.url}) usunięto z kolejki! \t`);
+                return Utils.shortEmbedReply(message.channel, `[${song.full_title}](${song.url}) deleted from queue! 💀\t`  );
             }
         }
     }
     
     async skipCommand(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message.channel, `Nie ma co pomijać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `There is nothing to skip! 🐵`);
         serverQueue.connection.dispatcher.end();
     }
 
     async skipToCommand(message, messageSplit, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message.channel, `Nie ma co pomijać Panie!`);
+            return Utils.shortEmbedReply(message.channel, `There is nothing to skip! 🐵`);
 
         if (messageSplit.length === 2) {
             const index = parseInt(messageSplit[1], 10);
@@ -328,7 +327,7 @@ class Music {
 
     async clearQueueCommand(message, serverQueue) {
         if (this.isQueueEmpty(serverQueue))
-            return Utils.shortEmbedReply(message.channel, `Nie ma co czyścić Panie!`);
+            return Utils.shortEmbedReply(message.channel, `There is nothing to skip! 🐒`);
 
         serverQueue.songs = [];
         serverQueue.connection.dispatcher.end();
@@ -350,9 +349,6 @@ class Music {
         } catch(e) {
             // there's no leaveTimer
         }
-
-        console.log('halo1')
-
 
         const dispatcher = serverQueue.connection
             .play(ytdl(song.url, {
@@ -379,7 +375,7 @@ class Music {
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
 
         const reply = new Discord.MessageEmbed()
-            .setDescription(`Teraz gramy: [${song.full_title}](${song.url})! \t`)
+            .setDescription(`We're playing 🐒: [${song.full_title}](${song.url})! \t`)
             .setColor(0xa62019);
         
         serverQueue.textChannel.send(reply);
@@ -537,7 +533,7 @@ class Music {
                 serverQueue.songs.push(song);
             }
         }
-        message.channel.send(' Queued **' + songsCount + '** tracks');
+        message.channel.send('🐒 Queued **' + songsCount + '** tracks');
     }
 
     getRandomOzjasz() {
