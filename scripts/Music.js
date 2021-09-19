@@ -21,7 +21,7 @@ const spotifyApi = new SpotifyWebApi({
 
 const ytOptions = {
     headers: {
-        cookie: process.env.COOKIEE,
+        cookie: process.env.COOKIE,
         "x-youtube-identity-token": process.env.YOUTUBE_KEY
     }
 };
