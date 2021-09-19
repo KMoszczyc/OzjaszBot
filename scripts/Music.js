@@ -17,8 +17,13 @@ const spotifyApi = new SpotifyWebApi({
     redirectUri: 'http://www.example.com/callback'
 });
 
+
+
 const ytOptions = {
-    Cookie: process.env.COOKIE
+    headers: {
+        cookie: process.env.COOKIEE,
+        "x-youtube-identity-token": process.env.YOUTUBE_KEY
+    }
 };
 
 const opts = {
@@ -345,6 +350,9 @@ class Music {
         } catch(e) {
             // there's no leaveTimer
         }
+
+        console.log('halo1')
+
 
         const dispatcher = serverQueue.connection
             .play(ytdl(song.url, {
