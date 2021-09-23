@@ -590,37 +590,6 @@ class Music {
             this.queue.delete(guildID);
         }
     }
-
-
-    async safeYTDL(link, options) {
-        // const stream = ytdl.createStream(options);
-        // let songInfo = null
-        // try {
-        //     songInfo = await ytdl.getInfo(link, options)
-        // }
-        // catch(error){
-        //     console.error(error)
-        //     Utils.shortEmbedReply(serverQueue.textChannel, `This song is!`)
-        // }
-
-        // console.log(songInfo)
-        // try {
-        //     await ytdl.downloadFromInfoCallback(stream, songInfo, options);
-        // }
-        // catch(error){
-        //     console.error(error)
-        //     stream.emit.bind(stream, 'error');
-        // }
-
-        try {
-            return ytdl(link, options)
-        }
-        catch(error){
-            console.error(error)
-            Utils.shortEmbedReply(serverQueue.textChannel, `This song is +18!`)
-        }
-        return null
-    };
 }
 
 module.exports.Music = Music;
