@@ -232,9 +232,16 @@ class Music {
     async addSong(message, url, voiceChannel, serverQueue) {
         Utils.checkPermissions(message, voiceChannel);
 
-        const songInfo = await ytdl.getInfo(url, {
-            requestOptions: ytOptions
-        });
+        let songInfo = null
+        try {
+            songInfo = await ytdl.getInfo(url, {
+                requestOptions: ytOptions
+            });
+        }
+        catch(error){
+            console.error('error')
+            return Utils.shortEmbedReply(message.channel, `This song is 🔞  feelsbadman`);
+        }
 
         let title = songInfo.videoDetails.title;
         if (title.length > 50)
@@ -350,29 +357,38 @@ class Music {
             // there's no leaveTimer
         }
 
-        const dispatcher = serverQueue.connection
-            .play(ytdl(song.url, {
-                filter: 'audioonly',
-                quality: 'highestaudio',
-                highWaterMark: 1 << 25,
-                requestOptions: ytOptions
-            }), {
-                highWaterMark: 1,
-                seek: skip_seconds
-            })
-            .on('finish', () => {
-                if(serverQueue.loopState == LoopState.LoopOff)
-                    serverQueue.songs.shift();
-                else if(serverQueue.loopState == LoopState.LoopAll)
-                    serverQueue.currentSongIndex++;
-                
-                if(serverQueue.currentSongIndex >= serverQueue.songs.length)
-                    serverQueue.currentSongIndex=0;
-                
-                this.play(guild, serverQueue.songs[serverQueue.currentSongIndex]);
-            })
-            .on('error', (error) => console.error(error));
-        dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        let dispatcher = null
+        try {
+            dispatcher = serverQueue.connection
+                .play(ytdl(song.url, {
+                    filter: 'audioonly',
+                    quality: 'highestaudio',
+                    highWaterMark: 1 << 25,
+                    requestOptions: ytOptions
+                }), {
+                    highWaterMark: 1,
+                    seek: skip_seconds
+                })
+                .on('finish', () => {
+                    if(serverQueue.loopState == LoopState.LoopOff)
+                        serverQueue.songs.shift();
+                    else if(serverQueue.loopState == LoopState.LoopAll)
+                        serverQueue.currentSongIndex++;
+                    
+                    if(serverQueue.currentSongIndex >= serverQueue.songs.length)
+                        serverQueue.currentSongIndex=0;
+                    
+                    this.play(guild, serverQueue.songs[serverQueue.currentSongIndex]);
+                })
+                .on('error', (error) => console.error(error));
+
+            dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        }
+        catch(error){
+            console.error(error)
+            return Utils.shortEmbedReply(message.channel, `This song is 🔞 feelsbadman`);
+        }
+
 
         const reply = new Discord.MessageEmbed()
             .setDescription(`We're playing 🐒: [${song.full_title}](${song.url})! \t`)
@@ -395,9 +411,18 @@ class Music {
     async playAtTop(guild, textChannel, voiceChannel, url, serverQueue=null, skip_seconds=0) {
         // Utils.checkPermissions(message, voiceChannel);
 
-        const songInfo = await ytdl.getInfo(url, {
-            requestOptions: ytOptions
-        });
+        let songInfo = null
+        // check if song is +18 or private
+        try {
+                songInfo = await ytdl.getInfo(url, {
+                requestOptions: ytOptions
+            });
+        }
+        catch(error){
+            console.error('error')
+            return Utils.shortEmbedReply(message.channel, `This song is +18 :( 🔞`);
+        }
+
         const song = {
             title: songInfo.videoDetails.title.slice(0, 50),
             full_title: songInfo.videoDetails.title,
@@ -565,6 +590,37 @@ class Music {
             this.queue.delete(guildID);
         }
     }
+
+
+    async safeYTDL(link, options) {
+        // const stream = ytdl.createStream(options);
+        // let songInfo = null
+        // try {
+        //     songInfo = await ytdl.getInfo(link, options)
+        // }
+        // catch(error){
+        //     console.error(error)
+        //     Utils.shortEmbedReply(serverQueue.textChannel, `This song is!`)
+        // }
+
+        // console.log(songInfo)
+        // try {
+        //     await ytdl.downloadFromInfoCallback(stream, songInfo, options);
+        // }
+        // catch(error){
+        //     console.error(error)
+        //     stream.emit.bind(stream, 'error');
+        // }
+
+        try {
+            return ytdl(link, options)
+        }
+        catch(error){
+            console.error(error)
+            Utils.shortEmbedReply(serverQueue.textChannel, `This song is +18!`)
+        }
+        return null
+    };
 }
 
 module.exports.Music = Music;
