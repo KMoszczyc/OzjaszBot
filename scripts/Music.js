@@ -266,7 +266,7 @@ class Music {
             }
 
             const reply = new Discord.MessageEmbed()
-                .setDescription(`[${song.full_title}](${song.url}) added to queue! 👀 \t`)
+                .setDescription(`[${song.full_title}](${song.url}) added to queue!  👀 \t`)
                 .setColor(0xa62019);
 
             return message.channel.send(reply);
@@ -391,7 +391,7 @@ class Music {
 
 
         const reply = new Discord.MessageEmbed()
-            .setDescription(`We're playing 🐒: [${song.full_title}](${song.url})! \t`)
+            .setDescription(`We're playing: [${song.full_title}](${song.url})!   🐒\t`)
             .setColor(0xa62019);
         
         serverQueue.textChannel.send(reply);
@@ -414,13 +414,13 @@ class Music {
         let songInfo = null
         // check if song is +18 or private
         try {
-                songInfo = await ytdl.getInfo(url, {
+            songInfo = await ytdl.getInfo(url, {
                 requestOptions: ytOptions
             });
         }
         catch(error){
             console.error('error')
-            return Utils.shortEmbedReply(message.channel, `This song is +18 :( 🔞`);
+            return Utils.shortEmbedReply(textChannel, `This song is 🔞 feelsbadman`);
         }
 
         const song = {

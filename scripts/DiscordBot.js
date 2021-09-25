@@ -13,7 +13,7 @@ const Music = require('./Music');
 console.log('beep beep! ');
 const brzechwa_url = 'https://www.youtube.com/watch?v=32ixE73t_uA&t=1431s';
 
-const aaa= 3
+
 
 module.exports = class DiscordBot {
     constructor() {
@@ -317,3 +317,4 @@ module.exports = class DiscordBot {
         Utils.shortEmbedReply(message.channel, reply);
     }
 };
+
