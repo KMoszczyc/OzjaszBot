@@ -260,24 +260,23 @@ class Music {
             serverQueue.songs.push(song);
         } else if (!Music.checkIfUrlInQueue(song.url, serverQueue)) {
             
-
-            console.log(serverQueue.songs)
-            console.log(serverQueue.songs.length == 0)
-
-
+            // if bot is not connected
             if (!this.client.voice.connections.some(conn => conn.channel.id === voiceChannel.id)) {
                 this.connectBot(message.guild.id, voiceChannel, serverQueue);
-
-                const reply = new Discord.MessageEmbed()
-                    .setDescription(`[${song.full_title}](${song.url}) added to queue!  👀 \t`)
-                    .setColor(0xa62019);
-
-            } // happens after entire queue was played but bot is still connected to channel (0-2 mins after last song) 
+            } 
+            // happens after entire queue was played but bot is still connected to channel (0-2 mins after last song) 
             else if(serverQueue.songs.length == 0) {
                 serverQueue.songs.push(song);
                 this.play(message.guild, song);
+                return
             }
-           
+            else {
+                serverQueue.songs.push(song);
+            }
+
+            const reply = new Discord.MessageEmbed()
+                .setDescription(`[${song.full_title}](${song.url}) added to queue!  👀 \t`)
+                .setColor(0xa62019);
             return message.channel.send(reply);
         }
     }
