@@ -43,7 +43,7 @@ module.exports = class DiscordBot {
         if (oldVoice !== newVoice && oldVoice === null && newMember.id === this.client.user.id) {
             console.log("Ozjasz bot joined!");
             const serverQueue = this.music.queue.get(newMember.guild.id);
-            if (serverQueue && serverQueue.songs !== [] && serverQueue.connection !== null) {
+            if (serverQueue && serverQueue.songs.length !== 0 && serverQueue.connection !== null) {
                 this.music.connectBot(newMember.guild.id, newMember.channel, serverQueue).then(conn => {
                     if (conn)
                         this.music.play(newMember.guild, serverQueue.songs[0]);
