@@ -3,8 +3,10 @@ require('dotenv').config();
 // APIs
 const Discord = require('discord.js');
 const axios = require('axios');
-const translate = require('translation-google');
+const translate = require('translate-google');
 const schedule = require('node-schedule')
+const { joinVoiceChannel } = require("@discordjs/voice");
+const { addSpeechEvent } = require("discord-speech-recognition");
 
 // project imports
 const Utils = require('./Utils');
@@ -13,18 +15,31 @@ const Music = require('./Music');
 console.log('beep beep! ');
 const brzechwa_url = 'https://www.youtube.com/watch?v=32ixE73t_uA&t=1431s';
 
-
-
 module.exports = class DiscordBot {
     constructor() {
-        this.client = new Discord.Client();
+        this.client = new Discord.Client({
+            intents: [
+                Discord.Intents.FLAGS.GUILDS,
+                Discord.Intents.FLAGS.GUILD_VOICE_STATES,
+                Discord.Intents.FLAGS.GUILD_MESSAGES,
+            ],
+          });
+
         this.music = new Music.Music(this.client);
         this.prefix = '-';
         this.scheduledJobs = new Map()
+        this.lastMessage = null;
+
+        this.client.on("speech", (msg) => {
+            console.log(msg.content);
+          });
+          
+        addSpeechEvent(this.client, { lang: "pl-PL" });
+        addSpeechEvent(this.client, { lang: "en-US" });
 
         this.client.login(process.env.TOKEN);
         this.client.on('ready', this.readyDiscord.bind(this));
-        this.client.on('message', this.gotMessage.bind(this));
+        this.client.on('messageCreate', this.gotMessage.bind(this));
         this.client.on('voiceStateUpdate', (oldMember, newMember) => this.voiceStateUpdate(oldMember, newMember));
     }
 
@@ -52,10 +67,16 @@ module.exports = class DiscordBot {
         }
     }
 
+    async gotVoiceMessage(message) {
+
+    }
+    
+
     async gotMessage(message) {
         console.log(message.content);
         const serverQueue = this.music.queue.get(message.guild.id);
-        
+        this.lastMessage = message;
+
         if(message.content.substring(0,3) === '!oz')
             Utils.shortEmbedReply(message.channel, `!oz is gone, now ${this.prefix} is the new command`);
 
@@ -146,7 +167,8 @@ module.exports = class DiscordBot {
                         this.music.playAtTop(message.guild, message.channel, message.member.voice.channel, brzechwa_url, serverQueue, 23*60 + 50);
                     break;
                 case 'join':
-                    message.member.voice.channel.join();
+                    // message.member.voice.channel.join();
+                    Utils.join(message.member.voice.channel)
                     this.music.createQueue(message, message.member.voice.channel, null);
                     break;
                 case 'guess':
@@ -179,6 +201,8 @@ module.exports = class DiscordBot {
             }
         }
     }
+
+
 
     async predictSentiment(message, sentence) {
         try {
