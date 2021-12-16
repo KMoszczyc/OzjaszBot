@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const fs = require('fs');
+const { joinVoiceChannel } = require("@discordjs/voice");
 
 module.exports = class Utils {
     static getUserId(userRef) {
@@ -138,5 +139,15 @@ module.exports = class Utils {
 
     static beautyTime(hour, minute){
         return `${hour}:${Utils.beautyNum(minute)}`
+    }
+
+    static async join(voiceChannel){
+        return joinVoiceChannel({
+            channelId: voiceChannel.id,
+            guildId: voiceChannel.guild.id,
+            adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+            selfDeaf: false,
+          });
+
     }
 };

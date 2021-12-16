@@ -5,6 +5,7 @@ const search = require('youtube-search');
 const axios = require('axios');
 const SpotifyWebApi = require('spotify-web-api-node');
 const lyricsFinder = require('lyrics-finder');
+const { getVoiceConnection, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
 
 // project imports
 const Utils = require('./Utils');
@@ -43,7 +44,7 @@ const max_spotify_songs_num = 30;
 class Music {
     constructor(client){
         this.queue = new Map();
-        this.client = client;
+        this.client = client;      
         this.timeoutTime = 120 * 1000   // 2 minutes
     }
 
@@ -286,6 +287,7 @@ class Music {
             textChannel: textChannel,
             voiceChannel: voiceChannel,
             connection: null,
+            player: createAudioPlayer(),
             songs: [],
             volume: 5,
             playing: true,
@@ -296,7 +298,7 @@ class Music {
         this.queue.set(guild.id, queueContruct);
 
         // ?????
-        const serverQueue = this.queue.get(guild.id);
+        const serverQueue = this.queue.get(guild.id);       
         serverQueue.loopState = LoopState.LoopOff;
 
        await this.connectBot(guild.id, voiceChannel, this.queue.get(guild.id)).then(conn => {
@@ -350,7 +352,7 @@ class Music {
     }
 
     async play(guild, song, skip_seconds=0) {
-        const serverQueue = this.queue.get(guild.id);
+        let serverQueue = this.queue.get(guild.id);
         if (!song) {
             serverQueue.leaveTimer = setTimeout(() => {
                 this.leaveWithTimeout(guild.id);
@@ -364,33 +366,53 @@ class Music {
         } catch(e) {
             // there's no leaveTimer
         }
-
+        console.log('halo1')
         let dispatcher = null
         try {
-            dispatcher = serverQueue.connection
-                .play(ytdl(song.url, {
-                    filter: 'audioonly',
-                    quality: 'highestaudio',
-                    highWaterMark: 1 << 25,
-                    requestOptions: ytOptions
-                }), {
-                    highWaterMark: 1,
-                    seek: skip_seconds
-                })
-                .on('finish', () => {
-                    if(serverQueue.loopState == LoopState.LoopOff)
-                        serverQueue.songs.shift();
-                    else if(serverQueue.loopState == LoopState.LoopAll)
-                        serverQueue.currentSongIndex++;
+            // dispatcher = serverQueue.connection
+            //     .play(ytdl(song.url, {
+            //         filter: 'audioonly',
+            //         quality: 'highestaudio',
+            //         highWaterMark: 1 << 25,
+            //         requestOptions: ytOptions
+            //     }), {
+            //         highWaterMark: 1,
+            //         seek: skip_seconds
+            //     })
+            //     .on('finish', () => {
+            //         if(serverQueue.loopState == LoopState.LoopOff)
+            //             serverQueue.songs.shift();
+            //         else if(serverQueue.loopState == LoopState.LoopAll)
+            //             serverQueue.currentSongIndex++;
                     
-                    if(serverQueue.currentSongIndex >= serverQueue.songs.length)
-                        serverQueue.currentSongIndex=0;
+            //         if(serverQueue.currentSongIndex >= serverQueue.songs.length)
+            //             serverQueue.currentSongIndex=0;
                     
-                    this.play(guild, serverQueue.songs[serverQueue.currentSongIndex]);
-                })
-                .on('error', (error) => console.error(error));
+            //         this.play(guild, serverQueue.songs[serverQueue.currentSongIndex]);
+            //     })
+            //     .on('error', (error) => console.error(error));
 
-            dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+            // dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+            // const stream = await ytdl(song.url, {
+            //     filter: 'audioonly',
+            //     quality: 'highestaudio',
+            //     highWaterMark: 1 << 25,
+            //     requestOptions: ytOptions
+            // })
+
+            const stream = ytdl(song.url, { filter: 'audioonly' });
+            // console.log(stream)
+            console.log('halo2')
+            const resource = createAudioResource(stream, {
+                inlineVolume: true
+            });       
+            resource.volume.setVolume(1);
+            serverQueue.player.play(resource)
+            serverQueue = this.queue.get(guild.id);
+            serverQueue.connection.subscribe(serverQueue.player)
+
+            console.log('halo3')
+
         }
         catch(error){
             console.error(error)
@@ -398,22 +420,30 @@ class Music {
         }
 
 
-        const reply = new Discord.MessageEmbed()
-            .setDescription(`We're playing: [${song.full_title}](${song.url})!   🐒\t`)
-            .setColor(0xa62019);
+        // const reply = new Discord.MessageEmbed()
+        //     .setDescription(`We're playing: [${song.full_title}](${song.url})!   🐒\t`)
+        //     .setColor(0xa62019);
         
-        serverQueue.textChannel.send(reply);
+        // serverQueue.textChannel.send(reply);
     }
 
     async playMp3(guild, songPath) {
         const serverQueue = this.queue.get(guild.id);
-        const dispatcher = serverQueue.connection.play(songPath)
-            .on('finish', () => {
-                if (serverQueue.songs[0] !== null)
-                    this.play(guild, serverQueue.songs[0]);
-            })
-            .on('error', (error) => console.error(error));
-        dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+        // const dispatcher = serverQueue.connection.play(songPath)
+        //     .on('finish', () => {
+        //         if (serverQueue.songs[0] !== null)
+        //             this.play(guild, serverQueue.songs[0]);
+        //     })
+        //     .on('error', (error) => console.error(error));
+        // dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
+
+        const resource = createAudioResource(songPath);
+        serverQueue.player.play(resource)
+        serverQueue.player.on(AudioPlayerStatus.Idle , () => {
+            console.log('The audio player has stopped playing!');
+            if (serverQueue.songs[0] !== null)
+                this.play(guild, serverQueue.songs[0]);
+        });
     }
 
     async playAtTop(guild, textChannel, voiceChannel, url, serverQueue=null, skip_seconds=0) {
@@ -462,9 +492,11 @@ class Music {
 
     async connectBot(guildId, voiceChannel, queue) {
         try {
-            const connection = await voiceChannel.join();
-            connection.voice.setSelfDeaf(true);
+            // const connection = await voiceChannel.join();
+            const connection = await Utils.join(voiceChannel);
+            // connection.voice.setSelfDeaf(true);
             queue.connection = connection;
+            queue.connection.subscribe(queue.player);
         } catch (err) {
             console.log(err);
             queue.delete(guildId);
