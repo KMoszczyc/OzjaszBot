@@ -335,10 +335,11 @@ module.exports = class DiscordBot {
         const text = messageNoPrefix.split(" ").slice(1).join(" ");
         if (text.length != "") {
             Utils.getRandomLineWithText("./data/paski-tvp.txt", text).then((sentence) => {
-                console.log(sentence);
+                sentence = sentence == ''? 'Nie ma takiego paska :(' : sentence
                 message.channel.send(sentence);
             });
-        } else {
+        } 
+        else {
             Utils.getRandomLine("./data/paski-tvp.txt").then((sentence) => {
                 message.channel.send(sentence);
             });

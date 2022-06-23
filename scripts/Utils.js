@@ -68,7 +68,9 @@ module.exports = class Utils {
         const lines = data.split("\n");
         const fitlered_lines = lines.filter((line) => line.toLowerCase().includes(text.toLowerCase()));
 
-        return fitlered_lines[Math.floor(Math.random() * fitlered_lines.length)];
+        const random_line = fitlered_lines[Math.floor(Math.random() * fitlered_lines.length)];
+
+        return random_line === undefined ? '' : random_line
     }
 
     static sleep(ms) {
