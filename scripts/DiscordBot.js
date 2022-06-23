@@ -231,7 +231,7 @@ module.exports = class DiscordBot {
             .setColor(0xa62019)
             .addField(
                 "Inne 🥓",
-                `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}tusk \n ${this.prefix}help \n`,
+                `${this.prefix}ozjasz (${this.prefix}o)  \n ${this.prefix}boczek [coś] 🥓 \n ${this.prefix}guess [coś] \n ${this.prefix}instrukcja \n ${this.prefix}random \n ${this.prefix}random [@nick] \n ${this.prefix}tusk \n ${this.prefix}help \n ${this.prefix}tvp [text] \n`,
                 true
             );
 
