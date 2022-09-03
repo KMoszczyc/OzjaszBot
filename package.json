@@ -10,24 +10,23 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/opus": "^0.3.3",
-    "axios": "^0.21.3",
+    "axios": "^0.27.2",
     "discord.js": "^12.5.3",
-    "dotenv": "^8.6.0",
+    "dotenv": "^16.0.2",
     "ffmpeg": "0.0.4",
-    "ffmpeg-static": "^4.4.0",
+    "ffmpeg-static": "^5.1.0",
     "fluent-ffmpeg": "^2.1.2",
-    "googleapis": "^66.0.0",
+    "googleapis": "^107.0.0",
     "lyrics-finder": "^21.7.0",
-    "node-schedule": "^2.0.0",
+    "node-schedule": "^2.1.0",
     "song-lyrics-api": "git+https://github.com/s0ftik3/lyrics-api.git",
     "spotify-web-api-node": "^5.0.2",
     "translation-google": "^0.2.1",
     "youtube-search": "^1.1.6",
-    "ytdl-core": "^4.9.2"
+    "ytdl-core": "^4.11.1"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "prettier": "2.2.1"
+    "eslint": "^8.23.0",
+    "prettier": "2.7.1"
   }
 }
