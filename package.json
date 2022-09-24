@@ -23,7 +23,7 @@
     "spotify-web-api-node": "^5.0.2",
     "translation-google": "^0.2.1",
     "youtube-search": "^1.1.6",
-    "ytdl-core": "^4.11.1"
+    "ytdl-core": "^4.11.2"
   },
   "devDependencies": {
     "eslint": "^8.23.0",
