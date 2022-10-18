@@ -193,6 +193,10 @@ module.exports = class DiscordBot {
                         serverQueue
                     );
                     break;
+                case "jankos":
+                    this.music.playMp3Safe('data/jankos.mp3', message.guild, message.member.voice.channel, message.channel)
+                    break;
+
                 default:
                     this.commandList(message);
             }

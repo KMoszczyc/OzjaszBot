@@ -281,7 +281,7 @@ class Music {
         }
     }
 
-    async createQueue(guild, voiceChannel, textChannel=null) {
+    async createQueue(guild, voiceChannel, textChannel=null, playWelcomeAudio=true) {
         const queueContruct = {
             textChannel: textChannel,
             voiceChannel: voiceChannel,
@@ -300,9 +300,12 @@ class Music {
         serverQueue.loopState = LoopState.LoopOff;
 
        await this.connectBot(guild.id, voiceChannel, this.queue.get(guild.id)).then(conn => {
-            if (conn)
-                this.playMp3(guild, 'data/ozjasz.mp3');
-            // play(message.guild, queue.get(message.guild.id).songs[0])
+            if (conn){
+                if (playWelcomeAudio)
+                    this.playMp3(guild, 'data/jankos.mp3');
+                else    
+                    play(message.guild, queue.get(message.guild.id).songs[0])
+            }
         });
     }
 
@@ -415,6 +418,17 @@ class Music {
             .on('error', (error) => console.error(error));
         dispatcher.setVolumeLogarithmic(serverQueue.volume / 5);
     }
+
+    async playMp3Safe(songPath, guild, voiceChannel, textChannel) {
+        const serverQueue = this.queue.get(guild.id);
+        if (serverQueue) {
+            this.playMp3(guild, songPath);
+        } else {
+            this.createQueue(guild, voiceChannel, textChannel, true);
+            this.playMp3(guild, songPath);
+        }
+    }
+
 
     async playAtTop(guild, textChannel, voiceChannel, url, serverQueue=null, skip_seconds=0) {
         // Utils.checkPermissions(message, voiceChannel);
