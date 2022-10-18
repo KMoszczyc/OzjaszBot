@@ -67,7 +67,6 @@ module.exports = class Utils {
         let data = await Utils.readFile(filename);
         const lines = data.split("\n");
         const fitlered_lines = lines.filter((line) => line.toLowerCase().includes(text.toLowerCase()));
-
         const random_line = fitlered_lines[Math.floor(Math.random() * fitlered_lines.length)];
 
         return random_line === undefined ? '' : random_line
