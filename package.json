@@ -21,7 +21,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "googleapis": "^107.0.0",
     "lyrics-finder": "^21.7.0",
-    "node-schedule": "^2.1.0",
+    "node-schedule": "^2.1.1",
     "song-lyrics-api": "git+https://github.com/s0ftik3/lyrics-api.git",
     "spotify-web-api-node": "^5.0.2",
     "translation-google": "^0.2.1",
